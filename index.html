@@ -28,6 +28,7 @@
             font-family: 'Inter', sans-serif;
             background-image: radial-gradient(circle at 50% 0%, #2a1a0a 0%, #0f0f0f 100%);
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
         .mtg-font { font-family: 'Beleren Small Caps', serif; letter-spacing: 0.5px; }
@@ -41,11 +42,18 @@
         .hero-banner {
             position: relative;
             width: 100%;
-            height: 360px;
+            height: 220px;
             background: linear-gradient(to bottom, #000 0%, #2a0a0a 100%);
             overflow: hidden;
             border-bottom: 2px solid var(--mtg-gold);
-            margin-bottom: -80px;
+            margin-bottom: -40px;
+        }
+
+        @media (min-width: 768px) {
+            .hero-banner {
+                height: 360px;
+                margin-bottom: -80px;
+            }
         }
 
         .mtg-pattern-overlay {
@@ -90,21 +98,46 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
         }
 
+        /* Responsive Card Views */
         .player-card {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.08);
             background: #161616;
-            height: 520px; 
             display: flex;
             flex-direction: column;
+            border-radius: 1.5rem;
         }
 
-        .player-card:hover {
-            transform: translateY(-8px);
-            border-color: var(--mtg-gold);
-            box-shadow: 0 20px 50px rgba(255, 77, 0, 0.2);
+        /* Mobile / Compact view */
+        @media (max-width: 767px) {
+            .player-card {
+                height: auto;
+                min-height: 280px;
+                padding-bottom: 1rem;
+            }
+            .content-wrap {
+                padding: 1.25rem !important;
+            }
+            .arsenal-container {
+                max-height: 300px;
+            }
+            .card-art-overlay {
+                opacity: 0.1 !important;
+            }
+        }
+
+        /* Updated Desktop view: 2-column Layout */
+        @media (min-width: 768px) {
+            .player-card {
+                height: 520px;
+            }
+            .player-card:hover {
+                transform: translateY(-8px);
+                border-color: var(--mtg-gold);
+                box-shadow: 0 20px 50px rgba(255, 77, 0, 0.2);
+            }
         }
 
         .card-art-overlay {
@@ -165,7 +198,7 @@
         .pip-G { background: var(--mana-green); color: white; }
 
         .activity-feed {
-            max-height: 500px;
+            max-height: 400px;
             overflow-y: auto;
             scrollbar-width: thin;
         }
@@ -191,12 +224,12 @@
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             background: rgba(0,0,0,0.4);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 10px 12px;
-            margin-bottom: 6px;
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
         }
 
         .deck-link {
@@ -221,13 +254,13 @@
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 4px;
-            font-size: 0.7rem;
-            padding: 2px 6px;
+            gap: 6px;
+            font-size: 0.75rem;
+            padding: 4px 10px;
             border-radius: 20px;
             background: rgba(255,255,255,0.05);
         }
-        .like-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.1); }
+        .like-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.05); }
         .like-btn.liked { color: #ff4d4d; background: rgba(255, 77, 77, 0.1); }
         .like-btn.liked i { font-weight: 900; }
 
@@ -258,36 +291,37 @@
         <div class="mtg-pattern-overlay"></div>
         <div class="flame-container" id="flameContainer"></div>
         <div class="relative z-10 text-center px-4">
-            <h1 class="draconis-font text-6xl md:text-9xl text-white mb-2 leading-none">
+            <h1 class="draconis-font text-5xl md:text-9xl text-white mb-2 leading-none">
                 Decks, <span style="color: var(--mtg-gold)">Dice,</span> and Dives
             </h1>
-            <p class="text-white/80 text-sm md:text-lg uppercase tracking-[0.4em] font-bold">The Flavortown Playgroup Directory</p>
+            <p class="text-white/80 text-[10px] md:text-lg uppercase tracking-[0.4em] font-bold">The Flavortown Playgroup Directory</p>
         </div>
     </div>
 
     <header class="max-w-[1600px] mx-auto relative z-20 px-4">
-        <div class="glass-panel rounded-3xl p-6 flex flex-col lg:flex-row gap-6 items-center">
+        <div class="glass-panel rounded-3xl p-4 md:p-6 flex flex-col lg:flex-row gap-4 md:gap-6 items-center">
             <div class="relative flex-grow w-full">
                 <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-gray-500"></i>
-                <input type="text" id="playerSearch" placeholder="Search names, decks, or colors (e.g. 'Red', 'WUBRG', 'R')..." 
-                    class="w-full bg-black/50 border border-white/10 rounded-2xl py-4 pl-14 pr-6 focus:outline-none focus:border-orange-500 text-white transition-all text-lg">
+                <input type="text" id="playerSearch" placeholder="Search names, decks, or colors..." 
+                    class="w-full bg-black/50 border border-white/10 rounded-2xl py-3 md:py-4 pl-12 md:pl-14 pr-6 focus:outline-none focus:border-orange-500 text-white transition-all text-sm md:text-lg">
             </div>
-            <div class="flex gap-8 text-sm font-semibold uppercase tracking-widest min-w-fit">
+            <div class="flex gap-6 md:gap-8 text-sm font-semibold uppercase tracking-widest min-w-fit">
                 <div class="text-center">
-                    <span class="block text-gold text-2xl font-bold" id="totalPlayersDisplay" style="color: var(--mtg-gold)">0</span>
-                    <span class="text-gray-500 text-[10px]">Commanders</span>
+                    <span class="block text-gold text-xl md:text-2xl font-bold" id="totalPlayersDisplay" style="color: var(--mtg-gold)">0</span>
+                    <span class="text-gray-500 text-[8px] md:text-[10px]">Commanders</span>
                 </div>
                 <div class="text-center">
-                    <span class="block text-orange-500 text-2xl font-bold" id="totalDecksDisplay">0</span>
-                    <span class="text-gray-500 text-[10px]">Total Decks</span>
+                    <span class="block text-orange-500 text-xl md:text-2xl font-bold" id="totalDecksDisplay">0</span>
+                    <span class="text-gray-500 text-[8px] md:text-[10px]">Total Decks</span>
                 </div>
             </div>
         </div>
     </header>
 
-    <div class="max-w-[1600px] mx-auto px-4 mt-12 grid grid-cols-1 xl:grid-cols-5 gap-8">
+    <div class="max-w-[1600px] mx-auto px-4 mt-8 md:mt-12 grid grid-cols-1 xl:grid-cols-5 gap-8">
         <div class="xl:col-span-4">
-            <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="playerGrid">
+            <!-- Grid Constraint: Max 2 columns on desktop for better visibility -->
+            <main class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8" id="playerGrid">
                 <div class="col-span-full flex flex-col items-center justify-center py-20 text-gray-500" id="loadingState">
                     <i class="fas fa-fire fa-spin text-4xl mb-4 text-orange-500"></i>
                     <p class="tracking-widest uppercase text-xs">Summoning the group...</p>
@@ -296,11 +330,11 @@
         </div>
 
         <aside class="xl:col-span-1 space-y-4">
-            <button onclick="window.addNewPlayer()" class="w-full bg-orange-600 hover:bg-orange-500 text-white p-4 rounded-2xl font-bold uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20">
+            <button onclick="window.addNewPlayer()" class="w-full bg-orange-600 hover:bg-orange-500 text-white p-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20">
                 <i class="fas fa-plus-circle text-sm"></i> Join the Playgroup
             </button>
 
-            <div class="glass-panel rounded-2xl p-6 sticky top-8">
+            <div class="glass-panel rounded-2xl p-6 hidden xl:block sticky top-8">
                 <h2 class="mtg-font text-lg text-white mb-4 flex items-center gap-2">
                     <i class="fas fa-bolt text-gold text-xs" style="color: var(--mtg-gold)"></i>
                     Recent Omens
@@ -314,42 +348,41 @@
 
     <!-- Edit Modal -->
     <div id="editModal" class="flex items-center justify-center p-4">
-        <div class="glass-panel w-full max-w-2xl rounded-3xl p-10 overflow-y-auto max-h-[95vh]">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="mtg-font text-4xl text-white" id="modalTitle">Update Legend</h2>
+        <div class="glass-panel w-full max-w-2xl rounded-3xl p-6 md:p-10 overflow-y-auto max-h-[95vh]">
+            <div class="flex justify-between items-center mb-6 md:mb-8">
+                <h2 class="mtg-font text-2xl md:text-4xl text-white" id="modalTitle">Update Legend</h2>
                 <button onclick="closeModal()" class="text-gray-500 hover:text-white transition-colors">
                     <i class="fas fa-times text-2xl"></i>
                 </button>
             </div>
-            <form id="editForm" class="space-y-6">
+            <form id="editForm" class="space-y-4 md:space-y-6">
                 <input type="hidden" id="editId">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-gray-500 block mb-2 tracking-widest">Display Name</label>
-                        <input type="text" id="editName" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white" required>
+                        <label class="text-[9px] md:text-[10px] uppercase font-bold text-gray-500 block mb-1 md:mb-2 tracking-widest">Display Name</label>
+                        <input type="text" id="editName" class="w-full bg-black/50 border border-white/10 p-3 md:p-4 rounded-xl text-white text-sm" required>
                     </div>
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-gray-500 block mb-2 tracking-widest">Discord Handle</label>
-                        <input type="text" id="editHandle" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white" required>
+                        <label class="text-[9px] md:text-[10px] uppercase font-bold text-gray-500 block mb-1 md:mb-2 tracking-widest">Discord Handle</label>
+                        <input type="text" id="editHandle" class="w-full bg-black/50 border border-white/10 p-3 md:p-4 rounded-xl text-white text-sm" required>
                     </div>
                 </div>
                 <div>
-                    <label class="text-[10px] uppercase font-bold text-gray-500 block mb-2 tracking-widest">Signature Card Art / Image URL</label>
-                    <input type="url" id="editArt" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white" placeholder="https://example.com/your-image.jpg">
-                    <p class="text-[9px] text-gray-400 mt-2 italic">Accepts any direct image link</p>
+                    <label class="text-[9px] md:text-[10px] uppercase font-bold text-gray-500 block mb-1 md:mb-2 tracking-widest">Signature Card Art URL</label>
+                    <input type="url" id="editArt" class="w-full bg-black/50 border border-white/10 p-3 md:p-4 rounded-xl text-white text-sm" placeholder="https://example.com/art.jpg">
                 </div>
                 <div>
-                    <label class="text-[10px] uppercase font-bold text-gray-500 block mb-2 tracking-widest">Decks (Format: Name | URL | Colors)</label>
-                    <textarea id="editDecks" rows="8" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white font-mono text-sm" placeholder="Example Deck | moxfield.com/... | WUBRG"></textarea>
+                    <label class="text-[9px] md:text-[10px] uppercase font-bold text-gray-500 block mb-1 md:mb-2 tracking-widest">Decks (Format: Name | URL | Colors)</label>
+                    <textarea id="editDecks" rows="6" class="w-full bg-black/50 border border-white/10 p-3 md:p-4 rounded-xl text-white font-mono text-xs md:text-sm" placeholder="Example Deck | moxfield.com/id | WUBRG"></textarea>
                 </div>
-                <button type="submit" class="w-full py-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold uppercase tracking-widest">Save Legend</button>
+                <button type="submit" class="w-full py-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold uppercase tracking-widest text-xs">Save Legend</button>
             </form>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, getDocs, addDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -427,15 +460,6 @@
             
             try {
                 await updateDoc(doc(db, ...PATH, 'players', playerId), { decks: newDecks });
-                if (!isLiked) {
-                    await addDoc(collection(db, ...PATH, 'activity'), {
-                        playerName: "Someone", 
-                        targetPlayer: player.name,
-                        deckName: deck.name,
-                        type: 'love',
-                        timestamp: Date.now()
-                    });
-                }
             } catch (err) {
                 showError("Interaction failed: " + err.message);
             }
@@ -449,81 +473,63 @@
         };
 
         const formatTime = (ts) => {
-            if (!ts) return 'Just now';
+            if (!ts) return 'Now';
             const diff = Date.now() - ts;
-            if (diff < 60000) return 'Just now';
-            if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
-            if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
-            return new Date(ts).toLocaleDateString();
+            if (diff < 60000) return 'Now';
+            if (diff < 3600000) return Math.floor(diff/60000) + 'm';
+            if (diff < 86400000) return Math.floor(diff/3600000) + 'h';
+            return new Date(ts).toLocaleDateString([], {month: 'short', day: 'numeric'});
         };
 
         const renderGrid = (queryStr = "") => {
             const grid = document.getElementById('playerGrid');
             const term = queryStr.toLowerCase().trim();
             const myLikes = getLikedDecks();
-
             const colorMap = { 'white': 'w', 'blue': 'u', 'black': 'b', 'red': 'r', 'green': 'g', 'colorless': 'c' };
 
-            // Logic: We iterate through players, and for each player we filter their decks
-            // If we are searching, we only show decks that match the search.
             const filteredPlayers = playersData.map(p => {
                 const decks = p.decks || [];
-                
-                // If there is no search term, return player with all decks
                 if (!term) return { ...p, filteredDecks: decks };
 
-                // Otherwise, filter this player's decks based on the term
                 const filteredDecks = decks.filter(d => {
                     const deckNameMatch = d.name.toLowerCase().includes(term);
                     const colorString = (d.colors || "").toLowerCase();
-                    const deckColorMatch = colorString.includes(term) || 
-                                          (colorMap[term] && colorString.includes(colorMap[term]));
-                    
+                    const deckColorMatch = colorString.includes(term) || (colorMap[term] && colorString.includes(colorMap[term]));
                     return deckNameMatch || deckColorMatch;
                 });
 
-                // Also check if the player name itself matches
                 const playerNameMatch = p.name?.toLowerCase().includes(term) || p.handle?.toLowerCase().includes(term);
-
-                // If the player name matches, show ALL their decks (or just return the player)
-                // If only specific decks match, only show those decks.
-                return { 
-                    ...p, 
-                    filteredDecks: playerNameMatch ? decks : filteredDecks,
-                    isPlayerMatch: playerNameMatch
-                };
+                return { ...p, filteredDecks: playerNameMatch ? decks : filteredDecks };
             }).filter(p => p.filteredDecks.length > 0);
             
             document.getElementById('totalPlayersDisplay').innerText = playersData.length;
             document.getElementById('totalDecksDisplay').innerText = playersData.reduce((acc, p) => acc + (p.decks?.length || 0), 0);
 
             grid.innerHTML = filteredPlayers.map(p => `
-                <div class="player-card rounded-3xl">
+                <div class="player-card">
                     <div class="card-art-overlay" style="background-image: url('${p.art || 'https://cards.scryfall.io/art_crop/front/a/c/ac55106a-a070-4384-8f74-cc2343206259.jpg'}')"></div>
                     <div class="content-wrap">
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <h3 class="mtg-font text-2xl text-white truncate max-w-[150px]">${p.name}</h3>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <i class="fab fa-discord text-[#5865F2] text-[10px]"></i>
-                                    <p class="text-[10px] text-orange-400 font-bold uppercase tracking-widest">@${p.handle}</p>
+                        <div class="flex justify-between items-start">
+                            <div class="flex-grow overflow-hidden">
+                                <h3 class="mtg-font text-lg md:text-2xl text-white truncate pr-2">${p.name}</h3>
+                                <div class="flex items-center gap-1.5 md:gap-2">
+                                    <i class="fab fa-discord text-[#5865F2] text-[8px] md:text-[10px]"></i>
+                                    <p class="text-[8px] md:text-[10px] text-orange-400 font-bold uppercase tracking-widest truncate">@${p.handle}</p>
                                 </div>
                             </div>
-                            <div class="text-[9px] text-white/30 uppercase font-bold text-right">
-                                Updated<br>${formatTime(p.updatedAt)}
+                            <div class="text-[7px] md:text-[9px] text-white/30 uppercase font-bold text-right shrink-0">
+                                Upd. ${formatTime(p.updatedAt)}
                             </div>
                         </div>
                         <div class="arsenal-container">
                             ${p.filteredDecks.map((d) => {
-                                // Important: We need the original index of the deck for the like functionality
-                                // since we stored likes in an array by index.
                                 const originalIdx = p.decks.findIndex(orig => orig.name === d.name);
                                 const deckId = `${p.id}_${originalIdx}`;
                                 const isLiked = myLikes.includes(deckId);
                                 return `
-                                <div class="deck-row group">
+                                <div class="deck-row">
                                     <a href="${d.url || '#'}" target="_blank" class="deck-link">${d.name}</a>
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-1 md:gap-3 shrink-0">
                                         <div class="flex-shrink-0">${renderMana(d.colors)}</div>
                                         <button onclick="window.toggleLike('${p.id}', ${originalIdx})" class="like-btn ${isLiked ? 'liked' : ''}">
                                             <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
@@ -534,8 +540,8 @@
                                 `;
                             }).join('')}
                         </div>
-                        <button onclick="window.openEditModal('${p.id}')" class="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all mt-auto shrink-0">
-                            Modify Legend
+                        <button onclick="window.openEditModal('${p.id}')" class="w-full py-2 md:py-3 bg-white/5 border border-white/10 rounded-lg md:rounded-xl text-[8px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all mt-auto shrink-0">
+                            Edit Legend
                         </button>
                     </div>
                 </div>
@@ -545,7 +551,7 @@
                 grid.innerHTML = `
                     <div class="col-span-full py-20 text-center opacity-40">
                         <i class="fas fa-ghost text-4xl mb-4"></i>
-                        <p class="mtg-font text-xl">No legends or relics found matching "${term}"</p>
+                        <p class="mtg-font text-xl">No legends matching "${term}"</p>
                     </div>
                 `;
             }
@@ -567,26 +573,27 @@
             }, (err) => showError("Sync Error: " + err.message));
 
             onSnapshot(collection(db, ...PATH, 'activity'), (snap) => {
-                const acts = snap.docs.map(d => d.data()).sort((a,b) => b.timestamp - a.timestamp).slice(0, 20);
-                document.getElementById('activityList').innerHTML = acts.map(a => {
-                    let message = "";
-                    let icon = "fa-bolt";
-                    switch(a.type) {
-                        case 'new': message = `<span class="text-gold font-bold" style="color: var(--mtg-gold)">${a.playerName}</span> emerged.`; icon = "fa-sparkles"; break;
-                        case 'deck_added': message = `<span class="text-gold font-bold" style="color: var(--mtg-gold)">${a.playerName}</span> forged <span class="text-white italic">${a.deckName}</span>`; icon = "fa-scroll"; break;
-                        case 'love': message = `A deck by <span class="text-gold font-bold" style="color: var(--mtg-gold)">${a.targetPlayer}</span> was loved.`; icon = "fa-heart text-red-500"; break;
-                        default: message = `<span class="text-gold font-bold" style="color: var(--mtg-gold)">${a.playerName}</span> updated.`; icon = "fa-pen-fancy";
-                    }
-                    return `
-                        <div class="activity-item p-3 mb-2 flex gap-3 items-start">
-                            <i class="fas ${icon} mt-1 text-[10px] opacity-50"></i>
-                            <div>
-                                <p class="text-[11px] leading-relaxed text-white/80">${message}</p>
-                                <p class="text-[8px] text-gray-500 mt-1 uppercase tracking-tighter">${formatTime(a.timestamp)}</p>
+                const acts = snap.docs.map(d => d.data()).sort((a,b) => b.timestamp - a.timestamp).slice(0, 15);
+                const actList = document.getElementById('activityList');
+                if (actList) {
+                    actList.innerHTML = acts.map(a => {
+                        let message = "";
+                        switch(a.type) {
+                            case 'new': message = `<span class="text-gold font-bold">${a.playerName}</span> emerged.`; break;
+                            case 'love': message = `<span class="text-gold font-bold">${a.targetPlayer}'s</span> deck loved.`; break;
+                            default: message = `<span class="text-gold font-bold">${a.playerName}</span> updated.`;
+                        }
+                        return `
+                            <div class="activity-item p-2 mb-2 flex gap-2 items-start">
+                                <i class="fas fa-bolt mt-1 text-[8px] opacity-50"></i>
+                                <div>
+                                    <p class="text-[10px] leading-snug text-white/80">${message}</p>
+                                    <p class="text-[7px] text-gray-500 mt-1 uppercase">${formatTime(a.timestamp)}</p>
+                                </div>
                             </div>
-                        </div>
-                    `;
-                }).join('');
+                        `;
+                    }).join('');
+                }
             });
         });
 
@@ -623,7 +630,7 @@
 
         document.getElementById('playerSearch').addEventListener('input', e => renderGrid(e.target.value));
         const container = document.getElementById('flameContainer');
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 15; i++) {
             const f = document.createElement('div');
             f.className = 'flame';
             f.style.left = `${Math.random() * 100}%`;
