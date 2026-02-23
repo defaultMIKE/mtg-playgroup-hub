@@ -326,15 +326,16 @@
         import { getFirestore, collection, onSnapshot, doc, updateDoc, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // FALLBACK CONFIG: Make sure you replace these with your actual keys if you see an error red box on GitHub!
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+        // --- PASTE YOUR FIREBASE CONFIG FROM THE CONSOLE BELOW ---
+        const firebaseConfig = {
+  apiKey: "AIzaSyDZt6RE-n6NpVyUQ5-hqdYI5E8kzJ_SgIE",
+  authDomain: "flavortown-mtg-hub.firebaseapp.com",
+  projectId: "flavortown-mtg-hub",
+  storageBucket: "flavortown-mtg-hub.firebasestorage.app",
+  messagingSenderId: "489208414325",
+  appId: "1:489208414325:web:fb067b922480c89283b83c",
+  measurementId: "G-9MC00H05P2"
+};
 
         const showError = (msg) => {
             const el = document.getElementById('errorDisplay');
@@ -350,7 +351,7 @@
             db = getFirestore(app);
             auth = getAuth(app);
         } catch (e) {
-            showError("Initialization Failed. Are your Firebase keys missing? " + e.message);
+            showError("Initialization Failed. Did you replace the keys in the code? " + e.message);
         }
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'flavortown-mtg-hub';
@@ -368,7 +369,7 @@
 
         window.closeModal = () => { document.getElementById('editModal').style.display = 'none'; };
         window.addNewPlayer = () => {
-            if(!currentUser) { showError("You must be connected to the portal to join."); return; }
+            if(!currentUser) { showError("Connecting to portal..."); return; }
             document.getElementById('editId').value = "";
             document.getElementById('editName').value = "";
             document.getElementById('editHandle').value = "";
@@ -472,8 +473,6 @@
                     </div>
                 `).join('');
             }
-            document.getElementById('totalPlayersDisplay').textContent = filtered.length;
-            document.getElementById('totalDecksDisplay').textContent = playersData.reduce((a, c) => a + (c.decks?.length || 0), 0);
         };
 
         const bootstrapInitialData = async () => {
@@ -529,7 +528,7 @@
                     await signInAnonymously(auth);
                 }
             } catch (e) {
-                showError("Portal Access Denied (Auth Error). If this is on GitHub, did you add your domain to Authorized Domains in Firebase? Error: " + e.code);
+                showError("Auth Error Code: " + e.code);
             }
         };
 
@@ -545,20 +544,19 @@
                     playersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     playersData.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
                     document.getElementById('loadingState')?.remove();
-                    document.getElementById('errorDisplay').style.display = 'none'; // Hide logger on success
+                    document.getElementById('errorDisplay').style.display = 'none';
                     renderGrid(document.getElementById('playerSearch').value);
                 }, (err) => {
-                    showError("Database Seal Broken. Ensure your Firestore rules allow reads. Error: " + err.message);
+                    showError("Database Locked. Check Firestore Rules. Error: " + err.code);
                 });
 
                 onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'activity'), (snap) => {
                     const acts = snap.docs.map(d => d.data()).sort((a,b) => b.timestamp - a.timestamp).slice(0, 30);
                     document.getElementById('activityList').innerHTML = acts.map(a => {
-                        let text = 'interacted with the hub';
+                        let text = 'interacted';
                         if (a.type === 'like') text = `loved <span class="text-white">${a.deckName}</span>`;
-                        else if (a.type === 'new') text = `joined the playgroup`;
+                        else if (a.type === 'new') text = `joined the group`;
                         else if (a.type === 'profile') text = `refined their legend`;
-                        
                         return `<div class="activity-item bg-white/5 p-3 rounded-lg border-l-2 border-gold/40">
                             <p class="text-[11px] text-white/90 leading-relaxed"><span class="font-bold text-gold">${a.playerName}</span> ${text}</p>
                             <p class="text-[8px] text-gray-500 mt-1 uppercase tracking-tighter">${formatTime(a.timestamp)}</p>
@@ -566,7 +564,7 @@
                     }).join('') || '<p class="text-gray-500 text-[10px] italic">Awaiting omens...</p>';
                 });
             } catch (e) {
-                showError("General Cosmic Error: " + e.message);
+                showError("General Error: " + e.message);
             }
         });
 
