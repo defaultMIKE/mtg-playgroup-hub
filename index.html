@@ -227,6 +227,7 @@
     <div id="errorDisplay" class="max-w-7xl mx-auto mt-4 px-4 relative z-50">
         <strong>CONNECTION LOG:</strong><br>
         <span id="errorMessage">Checking portal stability...</span>
+        <button onclick="location.reload()" class="mt-2 block bg-white/10 hover:bg-white/20 px-3 py-1 rounded text-[10px] uppercase font-bold">Force Re-summon</button>
     </div>
 
     <div class="hero-banner flex items-center justify-center">
@@ -266,6 +267,7 @@
                 <div class="col-span-full flex flex-col items-center justify-center py-20 text-gray-500" id="loadingState">
                     <i class="fas fa-fire fa-spin text-4xl mb-4 text-orange-500"></i>
                     <p class="tracking-widest uppercase text-xs" id="loadText">Summoning the group...</p>
+                    <div id="hangDetection" class="hidden mt-4 animate-pulse text-orange-400 text-[10px]">Portal is sluggish. Ensure Cloud Firestore is in "Test Mode" or Rules are open.</div>
                 </div>
             </main>
         </div>
@@ -323,10 +325,9 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, getDocs, addDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // CONFIGURATION DATA
         const firebaseConfig = {
             apiKey: "AIzaSyDZt6RE-n6NpVyUQ5-hqdYI5E8kzJ_SgIE",
             authDomain: "flavortown-mtg-hub.firebaseapp.com",
@@ -341,7 +342,6 @@
             const txt = document.getElementById('errorMessage');
             el.style.display = 'block';
             txt.innerText = msg;
-            console.error("Firebase Hub Error:", msg);
         };
 
         let db, auth, app;
@@ -357,6 +357,13 @@
         let playersData = [];
         let currentUser = null;
 
+        // Hang detection
+        setTimeout(() => {
+            if (playersData.length === 0) {
+                document.getElementById('hangDetection')?.classList.remove('hidden');
+            }
+        }, 5000);
+
         // UI Effects
         const container = document.getElementById('flameContainer');
         for (let i = 0; i < 30; i++) {
@@ -370,7 +377,7 @@
         window.closeModal = () => { document.getElementById('editModal').style.display = 'none'; };
         
         window.addNewPlayer = () => {
-            if(!currentUser) { showError("Portal sync required. Retrying auth..."); initAuth(); return; }
+            if(!currentUser) { showError("Portal sync required. Please refresh."); return; }
             document.getElementById('editId').value = "";
             document.getElementById('editName').value = "";
             document.getElementById('editHandle').value = "";
@@ -461,19 +468,28 @@
         };
 
         const bootstrapInitialData = async () => {
-            const playersCol = collection(db, 'artifacts', appId, 'public', 'data', 'players');
-            const snap = await getDocs(playersCol);
-            if (snap.empty) {
-                const names = ["Alex", "Justin", "Scott", "Jonas", "Bobby", "Chris", "Jason", "Michael", "Will", "Joshua", "Eric", "Jesse", "Dee", "Mike"];
-                for (const name of names) {
-                    await addDoc(playersCol, {
-                        name,
-                        handle: name.toLowerCase() + "_mtg",
-                        art: "https://cards.scryfall.io/art_crop/front/a/c/ac55106a-a070-4384-8f74-cc2343206259.jpg",
-                        decks: [{ name: "The Flavor Vault", url: "https://www.moxfield.com", colors: "WUBRG", likes: 0, likedBy: [] }],
-                        updatedAt: Date.now()
+            try {
+                const playersCol = collection(db, 'artifacts', appId, 'public', 'data', 'players');
+                const snap = await getDocs(playersCol);
+                if (snap.empty) {
+                    console.log("Database empty. Seeding initial legends...");
+                    const names = ["Alex", "Justin", "Scott", "Jonas", "Bobby", "Chris", "Jason", "Michael", "Will", "Joshua", "Eric", "Jesse", "Dee", "Mike"];
+                    const batch = writeBatch(db);
+                    names.forEach(name => {
+                        const newDoc = doc(playersCol);
+                        batch.set(newDoc, {
+                            name,
+                            handle: name.toLowerCase() + "_mtg",
+                            art: "https://cards.scryfall.io/art_crop/front/a/c/ac55106a-a070-4384-8f74-cc2343206259.jpg",
+                            decks: [{ name: "The Flavor Vault", url: "https://www.moxfield.com", colors: "WUBRG", likes: 0, likedBy: [] }],
+                            updatedAt: Date.now()
+                        });
                     });
+                    await batch.commit();
+                    console.log("Seeding complete.");
                 }
+            } catch (err) {
+                console.warn("Bootstrap failed (likely permission issues):", err.message);
             }
         };
 
@@ -511,18 +527,13 @@
 
         const initAuth = async () => {
             try {
-                // RULE 3: Auth Before Queries. Ensure anonymous auth is enabled in Firebase Console.
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
             } catch (e) {
-                let helpfulHint = "";
-                if (e.code === 'auth/configuration-not-found') {
-                    helpfulHint = " (Action Required: Go to Firebase Console > Build > Authentication > Get Started > Native Providers > Enable 'Anonymous')";
-                }
-                showError("Portal Access Denied (Auth Error). Error: " + e.code + helpfulHint);
+                showError("Auth Error: " + e.code);
             }
         };
 
@@ -533,24 +544,29 @@
             }
             currentUser = user;
             try {
-                await bootstrapInitialData();
+                // Try to seed if empty
+                bootstrapInitialData();
+
+                // Listen for players
                 onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'players'), (snap) => {
                     playersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     playersData.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+                    
                     const loading = document.getElementById('loadingState');
-                    if (loading) loading.remove();
+                    if (loading && playersData.length > 0) loading.remove();
+                    
                     document.getElementById('errorDisplay').style.display = 'none';
                     renderGrid(document.getElementById('playerSearch').value);
                 }, (err) => {
-                    showError("Database Locked. Error: " + err.code + ". Ensure 'Anonymous Auth' is enabled and Firestore Rules are published.");
+                    showError("Firestore Error: " + err.code + ". Check Security Rules.");
                 });
 
+                // Listen for activity
                 onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'activity'), (snap) => {
                     const acts = snap.docs.map(d => d.data()).sort((a,b) => b.timestamp - a.timestamp).slice(0, 30);
                     document.getElementById('activityList').innerHTML = acts.map(a => {
                         let text = 'interacted';
-                        if (a.type === 'like') text = `loved <span class="text-white">${a.deckName}</span>`;
-                        else if (a.type === 'new') text = `joined the group`;
+                        if (a.type === 'new') text = `joined the group`;
                         else if (a.type === 'profile') text = `refined their legend`;
                         return `<div class="activity-item bg-white/5 p-3 rounded-lg border-l-2 border-gold/40">
                             <p class="text-[11px] text-white/90 leading-relaxed"><span class="font-bold text-gold">${a.playerName}</span> ${text}</p>
@@ -559,7 +575,7 @@
                     }).join('') || '<p class="text-gray-500 text-[10px] italic">Awaiting omens...</p>';
                 });
             } catch (e) {
-                showError("General Sync Error: " + e.message);
+                showError("Sync Error: " + e.message);
             }
         });
 
