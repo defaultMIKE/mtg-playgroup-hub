@@ -357,6 +357,9 @@
         let playersData = [];
         let currentUser = null;
 
+        // Path constants for Rule compliance
+        const PUBLIC_DATA_PATH = ['artifacts', appId, 'public', 'data'];
+
         // Hang detection
         setTimeout(() => {
             if (playersData.length === 0) {
@@ -469,7 +472,7 @@
 
         const bootstrapInitialData = async () => {
             try {
-                const playersCol = collection(db, 'artifacts', appId, 'public', 'data', 'players');
+                const playersCol = collection(db, ...PUBLIC_DATA_PATH, 'players');
                 const snap = await getDocs(playersCol);
                 if (snap.empty) {
                     console.log("Database empty. Seeding initial legends...");
@@ -489,7 +492,7 @@
                     console.log("Seeding complete.");
                 }
             } catch (err) {
-                console.warn("Bootstrap failed (likely permission issues):", err.message);
+                console.warn("Bootstrap failed:", err.message);
             }
         };
 
@@ -509,14 +512,14 @@
             });
 
             const payload = { name: newName, handle: newHandle, art: newArt, decks: newDecks, updatedAt: Date.now() };
-            const activityCol = collection(db, 'artifacts', appId, 'public', 'data', 'activity');
+            const activityCol = collection(db, ...PUBLIC_DATA_PATH, 'activity');
 
             try {
                 if (id) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', id), payload);
+                    await updateDoc(doc(db, ...PUBLIC_DATA_PATH, 'players', id), payload);
                     await addDoc(activityCol, { playerName: newName, type: 'profile', timestamp: Date.now() });
                 } else {
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'players'), payload);
+                    await addDoc(collection(db, ...PUBLIC_DATA_PATH, 'players'), payload);
                     await addDoc(activityCol, { playerName: newName, type: 'new', timestamp: Date.now() });
                 }
                 window.closeModal();
@@ -544,11 +547,11 @@
             }
             currentUser = user;
             try {
-                // Try to seed if empty
-                bootstrapInitialData();
+                // Seed if empty
+                await bootstrapInitialData();
 
                 // Listen for players
-                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'players'), (snap) => {
+                onSnapshot(collection(db, ...PUBLIC_DATA_PATH, 'players'), (snap) => {
                     playersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     playersData.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
                     
@@ -558,11 +561,11 @@
                     document.getElementById('errorDisplay').style.display = 'none';
                     renderGrid(document.getElementById('playerSearch').value);
                 }, (err) => {
-                    showError("Firestore Error: " + err.code + ". Check Security Rules.");
+                    showError("Sync Failure: " + err.message + ". Check Rules tab.");
                 });
 
                 // Listen for activity
-                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'activity'), (snap) => {
+                onSnapshot(collection(db, ...PUBLIC_DATA_PATH, 'activity'), (snap) => {
                     const acts = snap.docs.map(d => d.data()).sort((a,b) => b.timestamp - a.timestamp).slice(0, 30);
                     document.getElementById('activityList').innerHTML = acts.map(a => {
                         let text = 'interacted';
