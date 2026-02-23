@@ -128,7 +128,7 @@
             }
         }
 
-        /* Updated Desktop view: 2-column Layout */
+        /* Desktop view: 2-column Layout */
         @media (min-width: 768px) {
             .player-card {
                 height: 520px;
@@ -198,7 +198,7 @@
         .pip-G { background: var(--mana-green); color: white; }
 
         .activity-feed {
-            max-height: 400px;
+            max-height: 480px;
             overflow-y: auto;
             scrollbar-width: thin;
         }
@@ -320,7 +320,6 @@
 
     <div class="max-w-[1600px] mx-auto px-4 mt-8 md:mt-12 grid grid-cols-1 xl:grid-cols-5 gap-8">
         <div class="xl:col-span-4">
-            <!-- Grid Constraint: Max 2 columns on desktop for better visibility -->
             <main class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8" id="playerGrid">
                 <div class="col-span-full flex flex-col items-center justify-center py-20 text-gray-500" id="loadingState">
                     <i class="fas fa-fire fa-spin text-4xl mb-4 text-orange-500"></i>
@@ -454,6 +453,13 @@
             } else {
                 deck.likes = currentLikes + 1;
                 myLikes.push(deckId);
+                // Record specific love in activity
+                await addDoc(collection(db, ...PATH, 'activity'), { 
+                    type: 'love', 
+                    targetPlayer: player.name, 
+                    deckName: deck.name,
+                    timestamp: Date.now() 
+                });
             }
 
             saveLikedDecks(myLikes);
@@ -546,15 +552,6 @@
                     </div>
                 </div>
             `).join('');
-
-            if (filteredPlayers.length === 0 && term) {
-                grid.innerHTML = `
-                    <div class="col-span-full py-20 text-center opacity-40">
-                        <i class="fas fa-ghost text-4xl mb-4"></i>
-                        <p class="mtg-font text-xl">No legends matching "${term}"</p>
-                    </div>
-                `;
-            }
         };
 
         onAuthStateChanged(auth, async (user) => {
@@ -578,17 +575,23 @@
                 if (actList) {
                     actList.innerHTML = acts.map(a => {
                         let message = "";
+                        const playerSpan = `<span class="text-white font-semibold">${a.playerName || a.targetPlayer}</span>`;
+                        const deckSpan = a.deckName ? `<span class="text-orange-400"> ${a.deckName}</span>` : "";
+                        const detailsHtml = a.details ? `<div class="text-[9px] text-gray-400 mt-1 pl-2 border-l border-white/10 leading-relaxed italic">${a.details}</div>` : "";
+
                         switch(a.type) {
-                            case 'new': message = `<span class="text-gold font-bold">${a.playerName}</span> emerged.`; break;
-                            case 'love': message = `<span class="text-gold font-bold">${a.targetPlayer}'s</span> deck loved.`; break;
-                            default: message = `<span class="text-gold font-bold">${a.playerName}</span> updated.`;
+                            case 'new': message = `${playerSpan} entered the fray.`; break;
+                            case 'love': message = `${playerSpan}'s deck ${deckSpan} was given some love.`; break;
+                            case 'update': message = `${playerSpan} updated their scroll.`; break;
+                            default: message = `${playerSpan} updated their scroll.`;
                         }
                         return `
-                            <div class="activity-item p-2 mb-2 flex gap-2 items-start">
-                                <i class="fas fa-bolt mt-1 text-[8px] opacity-50"></i>
-                                <div>
-                                    <p class="text-[10px] leading-snug text-white/80">${message}</p>
-                                    <p class="text-[7px] text-gray-500 mt-1 uppercase">${formatTime(a.timestamp)}</p>
+                            <div class="activity-item p-3 mb-2 flex gap-3 items-start">
+                                <i class="fas fa-bolt mt-1 text-[8px] text-gold" style="color: var(--mtg-gold)"></i>
+                                <div class="flex-grow min-w-0">
+                                    <p class="text-[10px] leading-snug text-white/70">${message}</p>
+                                    ${detailsHtml}
+                                    <p class="text-[8px] text-gray-600 mt-1 uppercase font-bold tracking-tighter">${formatTime(a.timestamp)}</p>
                                 </div>
                             </div>
                         `;
@@ -602,6 +605,7 @@
             const id = document.getElementById('editId').value;
             const existingPlayer = playersData.find(p => p.id === id);
             const existingDecks = existingPlayer?.decks || [];
+            
             const newName = document.getElementById('editName').value;
             const newHandle = document.getElementById('editHandle').value;
             const newArt = document.getElementById('editArt').value;
@@ -615,14 +619,45 @@
                     likes: matchedDeck ? (matchedDeck.likes || 0) : 0
                 };
             });
+
+            // Calculate change details for activity
+            let changeSummary = [];
+            if (id && existingPlayer) {
+                // Check Decks
+                const addedDecks = rawDecks.filter(nd => !existingDecks.find(ed => ed.name === nd.name));
+                const removedDecks = existingDecks.filter(ed => !rawDecks.find(nd => nd.name === ed.name));
+                const modifiedDecks = rawDecks.filter(nd => {
+                    const ed = existingDecks.find(old => old.name === nd.name);
+                    return ed && (ed.url !== nd.url || ed.colors !== nd.colors);
+                });
+                
+                if (addedDecks.length > 0) changeSummary.push(`Added: ${addedDecks.map(d => d.name).join(', ')}`);
+                if (removedDecks.length > 0) changeSummary.push(`Retired: ${removedDecks.map(d => d.name).join(', ')}`);
+                if (modifiedDecks.length > 0) changeSummary.push(`Modified: ${modifiedDecks.map(d => d.name).join(', ')}`);
+                
+                // Check Profile
+                if (existingPlayer.name !== newName) changeSummary.push(`Changed name to ${newName}`);
+                if (existingPlayer.art !== newArt) changeSummary.push(`Updated signature art`);
+                if (existingPlayer.handle !== newHandle) changeSummary.push(`Updated Discord handle`);
+            }
+
             const payload = { name: newName, handle: newHandle, art: newArt, decks: rawDecks, updatedAt: Date.now() };
             try {
                 if (id) {
                     await updateDoc(doc(db, ...PATH, 'players', id), payload);
-                    await addDoc(collection(db, ...PATH, 'activity'), { playerName: newName, type: 'update', timestamp: Date.now() });
+                    await addDoc(collection(db, ...PATH, 'activity'), { 
+                        playerName: newName, 
+                        type: 'update', 
+                        details: changeSummary.join(' • ') || "Refined deck details", 
+                        timestamp: Date.now() 
+                    });
                 } else {
                     await addDoc(collection(db, ...PATH, 'players'), payload);
-                    await addDoc(collection(db, ...PATH, 'activity'), { playerName: payload.name, type: 'new', timestamp: Date.now() });
+                    await addDoc(collection(db, ...PATH, 'activity'), { 
+                        playerName: payload.name, 
+                        type: 'new', 
+                        timestamp: Date.now() 
+                    });
                 }
                 closeModal();
             } catch (err) { showError("Save Failed: " + err.message); }
