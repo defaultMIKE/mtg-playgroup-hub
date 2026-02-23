@@ -44,7 +44,7 @@
             background: linear-gradient(to bottom, #000 0%, #2a0a0a 100%);
             overflow: hidden;
             border-bottom: 2px solid var(--mtg-gold);
-            margin-bottom: -100px;
+            margin-bottom: -80px;
         }
 
         .mtg-pattern-overlay {
@@ -95,7 +95,9 @@
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.08);
             background: #161616;
-            height: 540px;
+            min-height: 450px;
+            display: flex;
+            flex-direction: column;
         }
 
         .player-card:hover {
@@ -110,22 +112,28 @@
             opacity: 0.15; transition: opacity 0.3s ease; z-index: 0;
         }
 
-        .player-card:hover .card-art-overlay { opacity: 0.35; }
+        .player-card:hover .card-art-overlay { opacity: 0.3; }
 
-        .content-wrap { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; }
-
-        .arsenal-container {
-            flex-grow: 1; overflow-y: auto; margin-bottom: 1rem;
-            padding-right: 4px; scrollbar-width: thin;
+        .content-wrap { 
+            position: relative; 
+            z-index: 1; 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 1.5rem;
+            flex-grow: 1;
         }
 
-        .arsenal-container::-webkit-scrollbar, .activity-feed::-webkit-scrollbar { width: 4px; }
-        .arsenal-container::-webkit-scrollbar-thumb, .activity-feed::-webkit-scrollbar-thumb { background: rgba(197, 164, 103, 0.3); border-radius: 10px; }
+        .arsenal-container {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            flex-grow: 1;
+        }
 
         .mana-pip {
-            width: 14px; height: 14px; border-radius: 50%;
+            width: 16px; height: 16px; border-radius: 50%;
             display: inline-flex; align-items: center; justify-content: center;
-            font-size: 8px; font-weight: bold;
+            font-size: 9px; font-weight: bold;
             box-shadow: inset 0 0 2px rgba(0,0,0,0.5);
             border: 0.5px solid rgba(0,0,0,0.2);
             color: rgba(0,0,0,0.8);
@@ -137,7 +145,7 @@
         .pip-G { background: var(--mana-green); color: white; }
 
         .activity-feed {
-            max-height: 500px;
+            max-height: 600px;
             overflow-y: auto;
             scrollbar-width: thin;
         }
@@ -157,77 +165,56 @@
             background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
         }
 
-        #errorDisplay {
-            display: none;
-            background: #441111;
-            color: #ffcccc;
-            padding: 1rem;
-            border-radius: 1rem;
-            margin: 1rem auto;
-            max-width: 7xl;
-            border: 1px solid #ff4444;
-            font-family: monospace;
-            font-size: 12px;
-            word-break: break-all;
-        }
-
         .deck-row {
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 8px;
-            background: rgba(0,0,0,0.4);
+            gap: 12px;
+            background: rgba(0,0,0,0.6);
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 12px;
-            padding: 4px 12px;
-            margin-bottom: 8px;
+            padding: 10px 14px;
+            margin-bottom: 10px;
         }
 
         .deck-link {
             flex-grow: 1;
-            padding: 8px 0;
             text-decoration: none;
-            color: inherit;
+            color: #fff;
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
+            font-size: 0.875rem;
+            font-weight: 500;
         }
 
         .deck-row:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
             border-color: var(--mtg-gold);
+            transform: translateX(4px);
         }
 
-        .heart-btn {
-            color: #444;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            padding: 4px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 10px;
-            font-weight: bold;
-        }
-        .heart-btn:hover:not(.disabled) {
-            color: #ff4d6d;
-            transform: scale(1.1);
-        }
-        .heart-btn.active {
-            color: #ff4d6d;
-        }
-        .heart-btn.disabled {
-            cursor: default;
-            opacity: 0.8;
+        #errorDisplay {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(127, 29, 29, 0.95);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #ef4444;
+            max-width: 320px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
 <body class="pb-20">
 
-    <div id="errorDisplay" class="max-w-7xl mx-auto mt-4 px-4 relative z-50">
-        <strong>CONNECTION LOG:</strong><br>
-        <span id="errorMessage">Checking portal stability...</span>
-        <button onclick="location.reload()" class="mt-2 block bg-white/10 hover:bg-white/20 px-3 py-1 rounded text-[10px] uppercase font-bold">Force Re-summon</button>
+    <div id="errorDisplay">
+        <div class="font-bold mb-1">Mana Leak Detected</div>
+        <div id="errorMessage" class="text-xs opacity-80">Checking connection...</div>
     </div>
 
     <div class="hero-banner flex items-center justify-center">
@@ -250,7 +237,7 @@
             </div>
             <div class="flex gap-8 text-sm font-semibold uppercase tracking-widest min-w-fit">
                 <div class="text-center">
-                    <span class="block text-gold text-2xl font-bold" id="totalPlayersDisplay">0</span>
+                    <span class="block text-gold text-2xl font-bold" id="totalPlayersDisplay" style="color: var(--mtg-gold)">0</span>
                     <span class="text-gray-500 text-[10px]">Commanders</span>
                 </div>
                 <div class="text-center">
@@ -266,24 +253,23 @@
             <main class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="playerGrid">
                 <div class="col-span-full flex flex-col items-center justify-center py-20 text-gray-500" id="loadingState">
                     <i class="fas fa-fire fa-spin text-4xl mb-4 text-orange-500"></i>
-                    <p class="tracking-widest uppercase text-xs" id="loadText">Summoning the group...</p>
-                    <div id="hangDetection" class="hidden mt-4 animate-pulse text-orange-400 text-[10px]">Portal is sluggish. Ensure Cloud Firestore is in "Test Mode" or Rules are open.</div>
+                    <p class="tracking-widest uppercase text-xs">Summoning the group...</p>
                 </div>
             </main>
         </div>
 
         <aside class="lg:col-span-1 space-y-4">
-            <button onclick="window.addNewPlayer()" class="w-full bg-orange-600 hover:bg-orange-500 text-white p-3.5 rounded-2xl font-bold uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20 glass-panel border-none">
+            <button onclick="window.addNewPlayer()" class="w-full bg-orange-600 hover:bg-orange-500 text-white p-4 rounded-2xl font-bold uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20">
                 <i class="fas fa-plus-circle text-sm"></i> Join the Playgroup
             </button>
 
-            <div class="glass-panel rounded-2xl p-5 sticky top-8">
+            <div class="glass-panel rounded-2xl p-6 sticky top-8">
                 <h2 class="mtg-font text-lg text-white mb-4 flex items-center gap-2">
-                    <i class="fas fa-bolt text-gold text-xs"></i>
+                    <i class="fas fa-bolt text-gold text-xs" style="color: var(--mtg-gold)"></i>
                     Recent Omens
                 </h2>
                 <div class="activity-feed space-y-3 pr-2" id="activityList">
-                    <p class="text-gray-500 text-[10px] italic">Waiting for cosmic movements...</p>
+                    <p class="text-gray-500 text-[10px] italic">Awaiting cosmic movements...</p>
                 </div>
             </div>
         </aside>
@@ -311,7 +297,7 @@
                     </div>
                 </div>
                 <div>
-                    <label class="text-[10px] uppercase font-bold text-gray-500 block mb-2 tracking-widest">Signature Card Art (URL)</label>
+                    <label class="text-[10px] uppercase font-bold text-gray-500 block mb-2 tracking-widest">Signature Card Art (Scryfall Art Crop URL)</label>
                     <input type="url" id="editArt" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white" placeholder="https://cards.scryfall.io/art_crop/...">
                 </div>
                 <div>
@@ -326,7 +312,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, updateDoc, getDocs, addDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDZt6RE-n6NpVyUQ5-hqdYI5E8kzJ_SgIE",
@@ -337,50 +323,25 @@
             appId: "1:489208414325:web:fb067b922480c89283b83c"
         };
 
-        const showError = (msg) => {
-            const el = document.getElementById('errorDisplay');
-            const txt = document.getElementById('errorMessage');
-            el.style.display = 'block';
-            txt.innerText = msg;
-        };
-
-        let db, auth, app;
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-        } catch (e) {
-            showError("Initialization Failed: " + e.message);
-        }
-
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
         const appId = 'flavortown-mtg-hub';
+        const PATH = ['artifacts', appId, 'public', 'data'];
+
         let playersData = [];
         let currentUser = null;
 
-        // Path constants for Rule compliance
-        const PUBLIC_DATA_PATH = ['artifacts', appId, 'public', 'data'];
+        const showError = (msg) => {
+            const el = document.getElementById('errorDisplay');
+            el.style.display = 'block';
+            document.getElementById('errorMessage').innerText = msg;
+            setTimeout(() => { el.style.display = 'none'; }, 5000);
+        };
 
-        // Hang detection
-        setTimeout(() => {
-            if (playersData.length === 0) {
-                document.getElementById('hangDetection')?.classList.remove('hidden');
-            }
-        }, 5000);
-
-        // UI Effects
-        const container = document.getElementById('flameContainer');
-        for (let i = 0; i < 30; i++) {
-            const f = document.createElement('div');
-            f.className = 'flame';
-            f.style.left = `${Math.random() * 100}%`;
-            f.style.animationDelay = `${Math.random() * 2}s`;
-            container.appendChild(f);
-        }
-
-        window.closeModal = () => { document.getElementById('editModal').style.display = 'none'; };
+        window.closeModal = () => document.getElementById('editModal').style.display = 'none';
         
         window.addNewPlayer = () => {
-            if(!currentUser) { showError("Portal sync required. Please refresh."); return; }
             document.getElementById('editId').value = "";
             document.getElementById('editName').value = "";
             document.getElementById('editHandle').value = "";
@@ -422,167 +383,126 @@
             const term = queryStr.toLowerCase().trim();
             const filtered = playersData.filter(p => {
                 if (p.name?.toLowerCase().includes(term) || p.handle?.toLowerCase().includes(term)) return true;
-                return (p.decks || []).some(d => (d.name||"").toLowerCase().includes(term) || (d.colors||"").toLowerCase().includes(term));
+                return (p.decks || []).some(d => d.name.toLowerCase().includes(term) || d.colors.toLowerCase().includes(term));
             });
             
             document.getElementById('totalPlayersDisplay').innerText = playersData.length;
             document.getElementById('totalDecksDisplay').innerText = playersData.reduce((acc, p) => acc + (p.decks?.length || 0), 0);
 
-            if (filtered.length === 0 && playersData.length > 0) {
-                grid.innerHTML = `<div class="col-span-full py-10 text-center text-gray-500">No legends match your scrying...</div>`;
-            } else if (playersData.length > 0) {
-                grid.innerHTML = filtered.map(p => `
-                    <div class="player-card rounded-3xl p-6">
-                        <div class="card-art-overlay" style="background-image: url('${p.art || 'https://cards.scryfall.io/art_crop/front/a/c/ac55106a-a070-4384-8f74-cc2343206259.jpg'}')"></div>
-                        <div class="content-wrap">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 class="mtg-font text-2xl text-white">${p.name}</h3>
-                                    <p class="flex items-center gap-1.5 text-[10px] text-orange-400 font-bold uppercase tracking-widest">
-                                        <i class="fab fa-discord text-[11px] opacity-80"></i>
-                                        <span>@${p.handle}</span>
-                                    </p>
-                                </div>
-                                <div class="text-[9px] text-white/20 uppercase font-black tracking-tighter text-right">
-                                    Updated<br>${formatTime(p.updatedAt)}
-                                </div>
+            grid.innerHTML = filtered.map(p => `
+                <div class="player-card rounded-3xl">
+                    <div class="card-art-overlay" style="background-image: url('${p.art || 'https://cards.scryfall.io/art_crop/front/a/c/ac55106a-a070-4384-8f74-cc2343206259.jpg'}')"></div>
+                    <div class="content-wrap">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="mtg-font text-2xl text-white">${p.name}</h3>
+                                <p class="text-[10px] text-orange-400 font-bold uppercase tracking-widest mt-1">@${p.handle}</p>
                             </div>
-                            <div class="arsenal-container">
-                                ${(p.decks || []).map((d, idx) => `
-                                    <div class="deck-row">
-                                        <div class="heart-btn disabled">
-                                            <i class="far fa-heart"></i>
-                                            <span>${d.likes || 0}</span>
-                                        </div>
-                                        <a href="${d.url || '#'}" target="_blank" class="deck-link text-xs">
-                                            <span class="truncate">${d.name}</span>
-                                        </a>
-                                        <div class="flex-shrink-0">${renderMana(d.colors)}</div>
-                                    </div>
-                                `).join('')}
+                            <div class="text-[9px] text-white/30 uppercase font-bold text-right">
+                                Updated<br>${formatTime(p.updatedAt)}
                             </div>
-                            <button onclick="window.openEditModal('${p.id}')" class="mt-4 w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-gold hover:text-black transition-all">
-                                Modify Legend
-                            </button>
                         </div>
+                        <div class="arsenal-container">
+                            ${(p.decks || []).map(d => `
+                                <div class="deck-row">
+                                    <a href="${d.url || '#'}" target="_blank" class="deck-link">${d.name}</a>
+                                    <div class="flex-shrink-0">${renderMana(d.colors)}</div>
+                                </div>
+                            `).join('') || '<p class="text-gray-600 text-[10px] italic py-4">No decks registered yet...</p>'}
+                        </div>
+                        <button onclick="window.openEditModal('${p.id}')" class="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all mt-auto">
+                            Modify Profile
+                        </button>
                     </div>
-                `).join('');
-            }
+                </div>
+            `).join('');
         };
 
-        const bootstrapInitialData = async () => {
+        const bootstrap = async () => {
             try {
-                const playersCol = collection(db, ...PUBLIC_DATA_PATH, 'players');
-                const snap = await getDocs(playersCol);
+                const snap = await getDocs(collection(db, ...PATH, 'players'));
                 if (snap.empty) {
-                    console.log("Database empty. Seeding initial legends...");
                     const names = ["Alex", "Justin", "Scott", "Jonas", "Bobby", "Chris", "Jason", "Michael", "Will", "Joshua", "Eric", "Jesse", "Dee", "Mike"];
                     const batch = writeBatch(db);
                     names.forEach(name => {
-                        const newDoc = doc(playersCol);
-                        batch.set(newDoc, {
-                            name,
-                            handle: name.toLowerCase() + "_mtg",
+                        const d = doc(collection(db, ...PATH, 'players'));
+                        batch.set(d, {
+                            name, handle: name.toLowerCase(), 
                             art: "https://cards.scryfall.io/art_crop/front/a/c/ac55106a-a070-4384-8f74-cc2343206259.jpg",
-                            decks: [{ name: "The Flavor Vault", url: "https://www.moxfield.com", colors: "WUBRG", likes: 0, likedBy: [] }],
+                            decks: [{name: "Starter Deck", url: "https://moxfield.com", colors: "WUBRG"}],
                             updatedAt: Date.now()
                         });
                     });
                     await batch.commit();
-                    console.log("Seeding complete.");
                 }
-            } catch (err) {
-                console.warn("Bootstrap failed:", err.message);
-            }
-        };
-
-        document.getElementById('editForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!currentUser) return;
-            const id = document.getElementById('editId').value;
-            const existingPlayer = id ? playersData.find(x => x.id === id) : null;
-            const newName = document.getElementById('editName').value;
-            const newHandle = document.getElementById('editHandle').value;
-            const newArt = document.getElementById('editArt').value;
-            
-            const newDecks = document.getElementById('editDecks').value.split('\n').filter(l => l.trim()).map(l => {
-                const parts = l.split('|').map(s => s.trim());
-                const old = existingPlayer?.decks?.find(od => od.name === parts[0]);
-                return { name: parts[0], url: parts[1], colors: parts[2], likes: old?.likes || 0, likedBy: old?.likedBy || [] };
-            });
-
-            const payload = { name: newName, handle: newHandle, art: newArt, decks: newDecks, updatedAt: Date.now() };
-            const activityCol = collection(db, ...PUBLIC_DATA_PATH, 'activity');
-
-            try {
-                if (id) {
-                    await updateDoc(doc(db, ...PUBLIC_DATA_PATH, 'players', id), payload);
-                    await addDoc(activityCol, { playerName: newName, type: 'profile', timestamp: Date.now() });
-                } else {
-                    await addDoc(collection(db, ...PUBLIC_DATA_PATH, 'players'), payload);
-                    await addDoc(activityCol, { playerName: newName, type: 'new', timestamp: Date.now() });
-                }
-                window.closeModal();
-            } catch (err) {
-                showError("Save failed: " + err.message);
-            }
-        });
-
-        const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (e) {
-                showError("Auth Error: " + e.code);
-            }
+            } catch (e) { console.error("Bootstrap error", e); }
         };
 
         onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                initAuth();
-                return;
+            if (!user) { 
+                try { await signInAnonymously(auth); } catch(e) { showError("Auth Failed"); }
+                return; 
             }
             currentUser = user;
+            await bootstrap();
+
+            onSnapshot(collection(db, ...PATH, 'players'), (snap) => {
+                playersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                playersData.sort((a,b) => b.updatedAt - a.updatedAt);
+                const loader = document.getElementById('loadingState');
+                if (loader && playersData.length > 0) loader.remove();
+                renderGrid();
+            }, (err) => showError("Sync Error: " + err.message));
+
+            onSnapshot(collection(db, ...PATH, 'activity'), (snap) => {
+                const acts = snap.docs.map(d => d.data()).sort((a,b) => b.timestamp - a.timestamp).slice(0, 15);
+                document.getElementById('activityList').innerHTML = acts.map(a => `
+                    <div class="activity-item bg-white/5 p-3 rounded-lg">
+                        <p class="text-[11px] text-white/90"><span class="text-gold font-bold" style="color: var(--mtg-gold)">${a.playerName}</span> ${a.type === 'new' ? 'joined' : 'updated profile'}</p>
+                        <p class="text-[8px] text-gray-500 mt-1 uppercase">${formatTime(a.timestamp)}</p>
+                    </div>
+                `).join('');
+            }, (err) => console.warn("Activity stream failed"));
+        });
+
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editId').value;
+            const payload = {
+                name: document.getElementById('editName').value,
+                handle: document.getElementById('editHandle').value,
+                art: document.getElementById('editArt').value,
+                decks: document.getElementById('editDecks').value.split('\n').filter(l => l.trim()).map(l => {
+                    const [n, u, c] = l.split('|').map(s => s.trim());
+                    return { name: n, url: u || '', colors: (c || '').toUpperCase() };
+                }),
+                updatedAt: Date.now()
+            };
+
             try {
-                // Seed if empty
-                await bootstrapInitialData();
-
-                // Listen for players
-                onSnapshot(collection(db, ...PUBLIC_DATA_PATH, 'players'), (snap) => {
-                    playersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    playersData.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-                    
-                    const loading = document.getElementById('loadingState');
-                    if (loading && playersData.length > 0) loading.remove();
-                    
-                    document.getElementById('errorDisplay').style.display = 'none';
-                    renderGrid(document.getElementById('playerSearch').value);
-                }, (err) => {
-                    showError("Sync Failure: " + err.message + ". Check Rules tab.");
-                });
-
-                // Listen for activity
-                onSnapshot(collection(db, ...PUBLIC_DATA_PATH, 'activity'), (snap) => {
-                    const acts = snap.docs.map(d => d.data()).sort((a,b) => b.timestamp - a.timestamp).slice(0, 30);
-                    document.getElementById('activityList').innerHTML = acts.map(a => {
-                        let text = 'interacted';
-                        if (a.type === 'new') text = `joined the group`;
-                        else if (a.type === 'profile') text = `refined their legend`;
-                        return `<div class="activity-item bg-white/5 p-3 rounded-lg border-l-2 border-gold/40">
-                            <p class="text-[11px] text-white/90 leading-relaxed"><span class="font-bold text-gold">${a.playerName}</span> ${text}</p>
-                            <p class="text-[8px] text-gray-500 mt-1 uppercase tracking-tighter">${formatTime(a.timestamp)}</p>
-                        </div>`;
-                    }).join('') || '<p class="text-gray-500 text-[10px] italic">Awaiting omens...</p>';
-                });
-            } catch (e) {
-                showError("Sync Error: " + e.message);
+                if (id) {
+                    await updateDoc(doc(db, ...PATH, 'players', id), payload);
+                    await addDoc(collection(db, ...PATH, 'activity'), { playerName: payload.name, type: 'update', timestamp: Date.now() });
+                } else {
+                    await addDoc(collection(db, ...PATH, 'players'), payload);
+                    await addDoc(collection(db, ...PATH, 'activity'), { playerName: payload.name, type: 'new', timestamp: Date.now() });
+                }
+                closeModal();
+            } catch (err) {
+                showError("Save Failed: " + err.message);
             }
         });
 
-        document.getElementById('playerSearch').addEventListener('input', (e) => renderGrid(e.target.value));
+        document.getElementById('playerSearch').addEventListener('input', e => renderGrid(e.target.value));
+
+        const container = document.getElementById('flameContainer');
+        for (let i = 0; i < 20; i++) {
+            const f = document.createElement('div');
+            f.className = 'flame';
+            f.style.left = `${Math.random() * 100}%`;
+            f.style.animationDelay = `${Math.random() * 2}s`;
+            container.appendChild(f);
+        }
     </script>
 </body>
 </html>
