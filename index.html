@@ -96,7 +96,7 @@
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.08);
             background: #161616;
-            height: 520px; /* Fixed height for consistency */
+            height: 520px; 
             display: flex;
             flex-direction: column;
         }
@@ -135,7 +135,6 @@
             flex-grow: 1;
             overflow-y: auto;
             padding-right: 6px;
-            /* Custom Scrollbar for Deck List */
             scrollbar-width: thin;
             scrollbar-color: var(--mtg-gold) transparent;
         }
@@ -270,7 +269,7 @@
         <div class="glass-panel rounded-3xl p-6 flex flex-col lg:flex-row gap-6 items-center">
             <div class="relative flex-grow w-full">
                 <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-gray-500"></i>
-                <input type="text" id="playerSearch" placeholder="Search legends or colors (e.g. 'Red', 'WUBRG')..." 
+                <input type="text" id="playerSearch" placeholder="Search names, decks, or colors (e.g. 'Red', 'WUBRG', 'R')..." 
                     class="w-full bg-black/50 border border-white/10 rounded-2xl py-4 pl-14 pr-6 focus:outline-none focus:border-orange-500 text-white transition-all text-lg">
             </div>
             <div class="flex gap-8 text-sm font-semibold uppercase tracking-widest min-w-fit">
@@ -287,7 +286,6 @@
     </header>
 
     <div class="max-w-[1600px] mx-auto px-4 mt-12 grid grid-cols-1 xl:grid-cols-5 gap-8">
-        <!-- Main Content -->
         <div class="xl:col-span-4">
             <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="playerGrid">
                 <div class="col-span-full flex flex-col items-center justify-center py-20 text-gray-500" id="loadingState">
@@ -297,7 +295,6 @@
             </main>
         </div>
 
-        <!-- Sidebar -->
         <aside class="xl:col-span-1 space-y-4">
             <button onclick="window.addNewPlayer()" class="w-full bg-orange-600 hover:bg-orange-500 text-white p-4 rounded-2xl font-bold uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20">
                 <i class="fas fa-plus-circle text-sm"></i> Join the Playgroup
@@ -339,7 +336,7 @@
                 <div>
                     <label class="text-[10px] uppercase font-bold text-gray-500 block mb-2 tracking-widest">Signature Card Art / Image URL</label>
                     <input type="url" id="editArt" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white" placeholder="https://example.com/your-image.jpg">
-                    <p class="text-[9px] text-gray-400 mt-2 italic">Accepts any direct image link (MTG Art, Photos, Scryfall Crops, etc.)</p>
+                    <p class="text-[9px] text-gray-400 mt-2 italic">Accepts any direct image link</p>
                 </div>
                 <div>
                     <label class="text-[10px] uppercase font-bold text-gray-500 block mb-2 tracking-widest">Decks (Format: Name | URL | Colors)</label>
@@ -414,7 +411,6 @@
             const deckId = `${playerId}_${deckIndex}`;
             let myLikes = getLikedDecks();
             const isLiked = myLikes.includes(deckId);
-
             const newDecks = [...player.decks];
             const deck = newDecks[deckIndex];
             const currentLikes = deck.likes || 0;
@@ -440,7 +436,6 @@
                         timestamp: Date.now()
                     });
                 }
-                renderGrid(document.getElementById('playerSearch').value);
             } catch (err) {
                 showError("Interaction failed: " + err.message);
             }
@@ -467,15 +462,42 @@
             const term = queryStr.toLowerCase().trim();
             const myLikes = getLikedDecks();
 
-            const filtered = playersData.filter(p => {
-                if (p.name?.toLowerCase().includes(term) || p.handle?.toLowerCase().includes(term)) return true;
-                return (p.decks || []).some(d => d.name.toLowerCase().includes(term) || d.colors.toLowerCase().includes(term));
-            });
+            const colorMap = { 'white': 'w', 'blue': 'u', 'black': 'b', 'red': 'r', 'green': 'g', 'colorless': 'c' };
+
+            // Logic: We iterate through players, and for each player we filter their decks
+            // If we are searching, we only show decks that match the search.
+            const filteredPlayers = playersData.map(p => {
+                const decks = p.decks || [];
+                
+                // If there is no search term, return player with all decks
+                if (!term) return { ...p, filteredDecks: decks };
+
+                // Otherwise, filter this player's decks based on the term
+                const filteredDecks = decks.filter(d => {
+                    const deckNameMatch = d.name.toLowerCase().includes(term);
+                    const colorString = (d.colors || "").toLowerCase();
+                    const deckColorMatch = colorString.includes(term) || 
+                                          (colorMap[term] && colorString.includes(colorMap[term]));
+                    
+                    return deckNameMatch || deckColorMatch;
+                });
+
+                // Also check if the player name itself matches
+                const playerNameMatch = p.name?.toLowerCase().includes(term) || p.handle?.toLowerCase().includes(term);
+
+                // If the player name matches, show ALL their decks (or just return the player)
+                // If only specific decks match, only show those decks.
+                return { 
+                    ...p, 
+                    filteredDecks: playerNameMatch ? decks : filteredDecks,
+                    isPlayerMatch: playerNameMatch
+                };
+            }).filter(p => p.filteredDecks.length > 0);
             
             document.getElementById('totalPlayersDisplay').innerText = playersData.length;
             document.getElementById('totalDecksDisplay').innerText = playersData.reduce((acc, p) => acc + (p.decks?.length || 0), 0);
 
-            grid.innerHTML = filtered.map(p => `
+            grid.innerHTML = filteredPlayers.map(p => `
                 <div class="player-card rounded-3xl">
                     <div class="card-art-overlay" style="background-image: url('${p.art || 'https://cards.scryfall.io/art_crop/front/a/c/ac55106a-a070-4384-8f74-cc2343206259.jpg'}')"></div>
                     <div class="content-wrap">
@@ -492,22 +514,25 @@
                             </div>
                         </div>
                         <div class="arsenal-container">
-                            ${(p.decks || []).map((d, idx) => {
-                                const deckId = `${p.id}_${idx}`;
+                            ${p.filteredDecks.map((d) => {
+                                // Important: We need the original index of the deck for the like functionality
+                                // since we stored likes in an array by index.
+                                const originalIdx = p.decks.findIndex(orig => orig.name === d.name);
+                                const deckId = `${p.id}_${originalIdx}`;
                                 const isLiked = myLikes.includes(deckId);
                                 return `
                                 <div class="deck-row group">
                                     <a href="${d.url || '#'}" target="_blank" class="deck-link">${d.name}</a>
                                     <div class="flex items-center gap-2">
                                         <div class="flex-shrink-0">${renderMana(d.colors)}</div>
-                                        <button onclick="window.toggleLike('${p.id}', ${idx})" class="like-btn ${isLiked ? 'liked' : ''}">
+                                        <button onclick="window.toggleLike('${p.id}', ${originalIdx})" class="like-btn ${isLiked ? 'liked' : ''}">
                                             <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
                                             <span>${d.likes || 0}</span>
                                         </button>
                                     </div>
                                 </div>
                                 `;
-                            }).join('') || '<p class="text-gray-600 text-xs italic py-6">No decks registered yet...</p>'}
+                            }).join('')}
                         </div>
                         <button onclick="window.openEditModal('${p.id}')" class="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all mt-auto shrink-0">
                             Modify Legend
@@ -515,26 +540,15 @@
                     </div>
                 </div>
             `).join('');
-        };
 
-        const bootstrap = async () => {
-            try {
-                const snap = await getDocs(collection(db, ...PATH, 'players'));
-                if (snap.empty) {
-                    const names = ["Alex", "Justin", "Scott", "Jonas", "Bobby", "Chris", "Jason", "Michael", "Will", "Joshua", "Eric", "Jesse", "Dee", "Mike"];
-                    const batch = writeBatch(db);
-                    names.forEach(name => {
-                        const d = doc(collection(db, ...PATH, 'players'));
-                        batch.set(d, {
-                            name, handle: name.toLowerCase(), 
-                            art: "https://cards.scryfall.io/art_crop/front/a/c/ac55106a-a070-4384-8f74-cc2343206259.jpg",
-                            decks: Array(8).fill(null).map((_, i) => ({name: `Deck ${i+1}`, url: "https://moxfield.com", colors: "WUBRG", likes: 0})),
-                            updatedAt: Date.now()
-                        });
-                    });
-                    await batch.commit();
-                }
-            } catch (e) { console.error("Bootstrap error", e); }
+            if (filteredPlayers.length === 0 && term) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-20 text-center opacity-40">
+                        <i class="fas fa-ghost text-4xl mb-4"></i>
+                        <p class="mtg-font text-xl">No legends or relics found matching "${term}"</p>
+                    </div>
+                `;
+            }
         };
 
         onAuthStateChanged(auth, async (user) => {
@@ -543,7 +557,6 @@
                 return; 
             }
             currentUser = user;
-            await bootstrap();
 
             onSnapshot(collection(db, ...PATH, 'players'), (snap) => {
                 playersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
