@@ -96,7 +96,7 @@
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.08);
             background: #161616;
-            min-height: 550px;
+            min-height: 500px;
             display: flex;
             flex-direction: column;
         }
@@ -149,7 +149,7 @@
         .pip-G { background: var(--mana-green); color: white; }
 
         .activity-feed {
-            max-height: 600px;
+            max-height: 500px;
             overflow-y: auto;
             scrollbar-width: thin;
         }
@@ -178,7 +178,7 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 12px;
             padding: 12px 16px;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         .deck-link {
@@ -198,7 +198,6 @@
             transform: translateX(4px);
         }
 
-        /* Like Button Styling */
         .like-btn {
             cursor: pointer;
             transition: all 0.2s ease;
@@ -248,7 +247,7 @@
         </div>
     </div>
 
-    <header class="max-w-7xl mx-auto relative z-20 px-4">
+    <header class="max-w-[1600px] mx-auto relative z-20 px-4">
         <div class="glass-panel rounded-3xl p-6 flex flex-col lg:flex-row gap-6 items-center">
             <div class="relative flex-grow w-full">
                 <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-gray-500"></i>
@@ -268,8 +267,9 @@
         </div>
     </header>
 
-    <div class="max-w-7xl mx-auto px-4 mt-12 grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <div class="lg:col-span-3">
+    <div class="max-w-[1600px] mx-auto px-4 mt-12 grid grid-cols-1 xl:grid-cols-5 gap-8">
+        <!-- Main Content (Wider Grid) -->
+        <div class="xl:col-span-4">
             <main class="grid grid-cols-1 md:grid-cols-2 gap-8" id="playerGrid">
                 <div class="col-span-full flex flex-col items-center justify-center py-20 text-gray-500" id="loadingState">
                     <i class="fas fa-fire fa-spin text-4xl mb-4 text-orange-500"></i>
@@ -278,7 +278,8 @@
             </main>
         </div>
 
-        <aside class="lg:col-span-1 space-y-4">
+        <!-- Sidebar (Moved to Far Right) -->
+        <aside class="xl:col-span-1 space-y-4">
             <button onclick="window.addNewPlayer()" class="w-full bg-orange-600 hover:bg-orange-500 text-white p-4 rounded-2xl font-bold uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20">
                 <i class="fas fa-plus-circle text-sm"></i> Join the Playgroup
             </button>
