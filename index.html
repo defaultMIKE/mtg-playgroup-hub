@@ -19,6 +19,7 @@
             --mana-black: #150b00;
             --mana-red: #d3202a;
             --mana-green: #00733d;
+            --discord-blurple: #5865F2;
         }
 
         body {
@@ -95,7 +96,7 @@
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.08);
             background: #161616;
-            min-height: 450px;
+            min-height: 550px;
             display: flex;
             flex-direction: column;
         }
@@ -103,16 +104,19 @@
         .player-card:hover {
             transform: translateY(-8px);
             border-color: var(--mtg-gold);
-            box-shadow: 0 10px 40px rgba(255, 77, 0, 0.15);
+            box-shadow: 0 20px 50px rgba(255, 77, 0, 0.2);
         }
 
         .card-art-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-size: cover; background-position: center top;
-            opacity: 0.15; transition: opacity 0.3s ease; z-index: 0;
+            background-size: cover; 
+            background-position: center center;
+            opacity: 0.15; 
+            transition: opacity 0.3s ease; 
+            z-index: 0;
         }
 
-        .player-card:hover .card-art-overlay { opacity: 0.3; }
+        .player-card:hover .card-art-overlay { opacity: 0.4; }
 
         .content-wrap { 
             position: relative; 
@@ -120,20 +124,20 @@
             height: 100%; 
             display: flex; 
             flex-direction: column; 
-            padding: 1.5rem;
+            padding: 2rem;
             flex-grow: 1;
         }
 
         .arsenal-container {
-            margin-top: 1rem;
-            margin-bottom: 1rem;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
             flex-grow: 1;
         }
 
         .mana-pip {
-            width: 16px; height: 16px; border-radius: 50%;
+            width: 18px; height: 18px; border-radius: 50%;
             display: inline-flex; align-items: center; justify-content: center;
-            font-size: 9px; font-weight: bold;
+            font-size: 10px; font-weight: bold;
             box-shadow: inset 0 0 2px rgba(0,0,0,0.5);
             border: 0.5px solid rgba(0,0,0,0.2);
             color: rgba(0,0,0,0.8);
@@ -173,8 +177,8 @@
             background: rgba(0,0,0,0.6);
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 12px;
-            padding: 10px 14px;
-            margin-bottom: 10px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
         }
 
         .deck-link {
@@ -184,7 +188,7 @@
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
-            font-size: 0.875rem;
+            font-size: 0.95rem;
             font-weight: 500;
         }
 
@@ -193,6 +197,22 @@
             border-color: var(--mtg-gold);
             transform: translateX(4px);
         }
+
+        /* Like Button Styling */
+        .like-btn {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.05);
+        }
+        .like-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.1); }
+        .like-btn.liked { color: #ff4d4d; background: rgba(255, 77, 77, 0.1); }
+        .like-btn.liked i { font-weight: 900; }
 
         #errorDisplay {
             display: none;
@@ -250,7 +270,7 @@
 
     <div class="max-w-7xl mx-auto px-4 mt-12 grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div class="lg:col-span-3">
-            <main class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="playerGrid">
+            <main class="grid grid-cols-1 md:grid-cols-2 gap-8" id="playerGrid">
                 <div class="col-span-full flex flex-col items-center justify-center py-20 text-gray-500" id="loadingState">
                     <i class="fas fa-fire fa-spin text-4xl mb-4 text-orange-500"></i>
                     <p class="tracking-widest uppercase text-xs">Summoning the group...</p>
@@ -279,7 +299,7 @@
     <div id="editModal" class="flex items-center justify-center p-4">
         <div class="glass-panel w-full max-w-2xl rounded-3xl p-10 overflow-y-auto max-h-[95vh]">
             <div class="flex justify-between items-center mb-8">
-                <h2 class="mtg-font text-4xl text-white" id="modalTitle">Update Profile</h2>
+                <h2 class="mtg-font text-4xl text-white" id="modalTitle">Update Legend</h2>
                 <button onclick="closeModal()" class="text-gray-500 hover:text-white transition-colors">
                     <i class="fas fa-times text-2xl"></i>
                 </button>
@@ -297,14 +317,15 @@
                     </div>
                 </div>
                 <div>
-                    <label class="text-[10px] uppercase font-bold text-gray-500 block mb-2 tracking-widest">Signature Card Art (Scryfall Art Crop URL)</label>
-                    <input type="url" id="editArt" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white" placeholder="https://cards.scryfall.io/art_crop/...">
+                    <label class="text-[10px] uppercase font-bold text-gray-500 block mb-2 tracking-widest">Signature Card Art / Image URL</label>
+                    <input type="url" id="editArt" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white" placeholder="https://example.com/your-image.jpg">
+                    <p class="text-[9px] text-gray-400 mt-2 italic">Accepts any direct image link (MTG Art, Photos, Scryfall Crops, etc.)</p>
                 </div>
                 <div>
                     <label class="text-[10px] uppercase font-bold text-gray-500 block mb-2 tracking-widest">Decks (Format: Name | URL | Colors)</label>
                     <textarea id="editDecks" rows="8" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white font-mono text-sm" placeholder="Example Deck | moxfield.com/... | WUBRG"></textarea>
                 </div>
-                <button type="submit" class="w-full py-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold uppercase tracking-widest">Save Profile</button>
+                <button type="submit" class="w-full py-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold uppercase tracking-widest">Save Legend</button>
             </form>
         </div>
     </div>
@@ -359,8 +380,26 @@
             document.getElementById('editHandle').value = p.handle;
             document.getElementById('editArt').value = p.art || '';
             document.getElementById('editDecks').value = (p.decks || []).map(d => `${d.name} | ${d.url || ''} | ${d.colors || ''}`).join('\n');
-            document.getElementById('modalTitle').textContent = "Update Profile";
+            document.getElementById('modalTitle').textContent = "Update Legend";
             document.getElementById('editModal').style.display = 'flex';
+        };
+
+        window.toggleLike = async (playerId, deckIndex) => {
+            const player = playersData.find(p => p.id === playerId);
+            if (!player) return;
+            
+            const newDecks = [...player.decks];
+            const deck = newDecks[deckIndex];
+            const currentLikes = deck.likes || 0;
+            
+            deck.likes = currentLikes + 1;
+            
+            try {
+                await updateDoc(doc(db, ...PATH, 'players', playerId), { decks: newDecks });
+                await updateDoc(doc(db, ...PATH, 'players', playerId), { updatedAt: Date.now() });
+            } catch (err) {
+                showError("Interaction failed: " + err.message);
+            }
         };
 
         const renderMana = (colors) => {
@@ -393,25 +432,34 @@
                 <div class="player-card rounded-3xl">
                     <div class="card-art-overlay" style="background-image: url('${p.art || 'https://cards.scryfall.io/art_crop/front/a/c/ac55106a-a070-4384-8f74-cc2343206259.jpg'}')"></div>
                     <div class="content-wrap">
-                        <div class="flex justify-between items-start">
+                        <div class="flex justify-between items-start mb-4">
                             <div>
-                                <h3 class="mtg-font text-2xl text-white">${p.name}</h3>
-                                <p class="text-[10px] text-orange-400 font-bold uppercase tracking-widest mt-1">@${p.handle}</p>
+                                <h3 class="mtg-font text-3xl text-white">${p.name}</h3>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <i class="fab fa-discord text-[#5865F2] text-[10px]"></i>
+                                    <p class="text-xs text-orange-400 font-bold uppercase tracking-widest">@${p.handle}</p>
+                                </div>
                             </div>
-                            <div class="text-[9px] text-white/30 uppercase font-bold text-right">
+                            <div class="text-[10px] text-white/30 uppercase font-bold text-right">
                                 Updated<br>${formatTime(p.updatedAt)}
                             </div>
                         </div>
                         <div class="arsenal-container">
-                            ${(p.decks || []).map(d => `
-                                <div class="deck-row">
+                            ${(p.decks || []).map((d, idx) => `
+                                <div class="deck-row group">
                                     <a href="${d.url || '#'}" target="_blank" class="deck-link">${d.name}</a>
-                                    <div class="flex-shrink-0">${renderMana(d.colors)}</div>
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex-shrink-0">${renderMana(d.colors)}</div>
+                                        <button onclick="window.toggleLike('${p.id}', ${idx})" class="like-btn group-hover:opacity-100">
+                                            <i class="far fa-heart"></i>
+                                            <span>${d.likes || 0}</span>
+                                        </button>
+                                    </div>
                                 </div>
-                            `).join('') || '<p class="text-gray-600 text-[10px] italic py-4">No decks registered yet...</p>'}
+                            `).join('') || '<p class="text-gray-600 text-xs italic py-6">No decks registered yet...</p>'}
                         </div>
-                        <button onclick="window.openEditModal('${p.id}')" class="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all mt-auto">
-                            Modify Profile
+                        <button onclick="window.openEditModal('${p.id}')" class="w-full py-4 bg-white/5 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all mt-auto">
+                            Modify Legend
                         </button>
                     </div>
                 </div>
@@ -429,7 +477,7 @@
                         batch.set(d, {
                             name, handle: name.toLowerCase(), 
                             art: "https://cards.scryfall.io/art_crop/front/a/c/ac55106a-a070-4384-8f74-cc2343206259.jpg",
-                            decks: [{name: "Starter Deck", url: "https://moxfield.com", colors: "WUBRG"}],
+                            decks: [{name: "Starter Deck", url: "https://moxfield.com", colors: "WUBRG", likes: 0}],
                             updatedAt: Date.now()
                         });
                     });
@@ -468,13 +516,23 @@
         document.getElementById('editForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('editId').value;
+            
+            const existingPlayer = playersData.find(p => p.id === id);
+            const existingDecks = existingPlayer?.decks || [];
+
             const payload = {
                 name: document.getElementById('editName').value,
                 handle: document.getElementById('editHandle').value,
                 art: document.getElementById('editArt').value,
                 decks: document.getElementById('editDecks').value.split('\n').filter(l => l.trim()).map(l => {
                     const [n, u, c] = l.split('|').map(s => s.trim());
-                    return { name: n, url: u || '', colors: (c || '').toUpperCase() };
+                    const matchedDeck = existingDecks.find(ed => ed.name === n);
+                    return { 
+                        name: n, 
+                        url: u || '', 
+                        colors: (c || '').toUpperCase(),
+                        likes: matchedDeck ? (matchedDeck.likes || 0) : 0
+                    };
                 }),
                 updatedAt: Date.now()
             };
