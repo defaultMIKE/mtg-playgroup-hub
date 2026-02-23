@@ -326,16 +326,15 @@
         import { getFirestore, collection, onSnapshot, doc, updateDoc, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // --- PASTE YOUR FIREBASE CONFIG FROM THE CONSOLE BELOW ---
+        // CONFIGURATION DATA
         const firebaseConfig = {
-  apiKey: "AIzaSyDZt6RE-n6NpVyUQ5-hqdYI5E8kzJ_SgIE",
-  authDomain: "flavortown-mtg-hub.firebaseapp.com",
-  projectId: "flavortown-mtg-hub",
-  storageBucket: "flavortown-mtg-hub.firebasestorage.app",
-  messagingSenderId: "489208414325",
-  appId: "1:489208414325:web:fb067b922480c89283b83c",
-  measurementId: "G-9MC00H05P2"
-};
+            apiKey: "AIzaSyDZt6RE-n6NpVyUQ5-hqdYI5E8kzJ_SgIE",
+            authDomain: "flavortown-mtg-hub.firebaseapp.com",
+            projectId: "flavortown-mtg-hub",
+            storageBucket: "flavortown-mtg-hub.firebasestorage.app",
+            messagingSenderId: "489208414325",
+            appId: "1:489208414325:web:fb067b922480c89283b83c"
+        };
 
         const showError = (msg) => {
             const el = document.getElementById('errorDisplay');
@@ -351,13 +350,14 @@
             db = getFirestore(app);
             auth = getAuth(app);
         } catch (e) {
-            showError("Initialization Failed. Did you replace the keys in the code? " + e.message);
+            showError("Initialization Failed: " + e.message);
         }
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'flavortown-mtg-hub';
+        const appId = 'flavortown-mtg-hub';
         let playersData = [];
         let currentUser = null;
 
+        // UI Effects
         const container = document.getElementById('flameContainer');
         for (let i = 0; i < 30; i++) {
             const f = document.createElement('div');
@@ -368,8 +368,9 @@
         }
 
         window.closeModal = () => { document.getElementById('editModal').style.display = 'none'; };
+        
         window.addNewPlayer = () => {
-            if(!currentUser) { showError("Connecting to portal..."); return; }
+            if(!currentUser) { showError("Portal sync required. Retrying auth..."); initAuth(); return; }
             document.getElementById('editId').value = "";
             document.getElementById('editName').value = "";
             document.getElementById('editHandle').value = "";
@@ -389,22 +390,6 @@
             document.getElementById('editDecks').value = (p.decks || []).map(d => `${d.name} | ${d.url || ''} | ${d.colors || ''}`).join('\n');
             document.getElementById('modalTitle').textContent = "Update Profile";
             document.getElementById('editModal').style.display = 'flex';
-        };
-
-        window.likeDeck = async (playerId, deckIdx) => {
-            if (!currentUser) return;
-            const player = playersData.find(p => p.id === playerId);
-            if (!player || !player.decks) return;
-            const newDecks = [...player.decks];
-            const deck = newDecks[deckIdx];
-            const likedBy = deck.likedBy || [];
-            if (likedBy.includes(currentUser.uid)) return;
-            deck.likes = (deck.likes || 0) + 1;
-            deck.likedBy = [...likedBy, currentUser.uid];
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', playerId), { decks: newDecks });
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'activity'), { 
-                playerName: player.name, deckName: deck.name, type: 'like', timestamp: Date.now() 
-            });
         };
 
         const renderMana = (colors) => {
@@ -429,6 +414,10 @@
                 if (p.name?.toLowerCase().includes(term) || p.handle?.toLowerCase().includes(term)) return true;
                 return (p.decks || []).some(d => (d.name||"").toLowerCase().includes(term) || (d.colors||"").toLowerCase().includes(term));
             });
+            
+            document.getElementById('totalPlayersDisplay').innerText = playersData.length;
+            document.getElementById('totalDecksDisplay').innerText = playersData.reduce((acc, p) => acc + (p.decks?.length || 0), 0);
+
             if (filtered.length === 0 && playersData.length > 0) {
                 grid.innerHTML = `<div class="col-span-full py-10 text-center text-gray-500">No legends match your scrying...</div>`;
             } else if (playersData.length > 0) {
@@ -449,22 +438,18 @@
                                 </div>
                             </div>
                             <div class="arsenal-container">
-                                ${(p.decks || []).map((d, idx) => {
-                                    const hasLiked = currentUser && d.likedBy?.includes(currentUser.uid);
-                                    return `
-                                        <div class="deck-row">
-                                            <div onclick="window.likeDeck('${p.id}', ${idx})" 
-                                                 class="heart-btn ${hasLiked ? 'active disabled' : ''}">
-                                                <i class="${hasLiked ? 'fas' : 'far'} fa-heart"></i>
-                                                <span>${d.likes || 0}</span>
-                                            </div>
-                                            <a href="${d.url || '#'}" target="_blank" class="deck-link text-xs">
-                                                <span class="truncate">${d.name}</span>
-                                            </a>
-                                            <div class="flex-shrink-0">${renderMana(d.colors)}</div>
+                                ${(p.decks || []).map((d, idx) => `
+                                    <div class="deck-row">
+                                        <div class="heart-btn disabled">
+                                            <i class="far fa-heart"></i>
+                                            <span>${d.likes || 0}</span>
                                         </div>
-                                    `;
-                                }).join('')}
+                                        <a href="${d.url || '#'}" target="_blank" class="deck-link text-xs">
+                                            <span class="truncate">${d.name}</span>
+                                        </a>
+                                        <div class="flex-shrink-0">${renderMana(d.colors)}</div>
+                                    </div>
+                                `).join('')}
                             </div>
                             <button onclick="window.openEditModal('${p.id}')" class="mt-4 w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-gold hover:text-black transition-all">
                                 Modify Legend
@@ -510,25 +495,34 @@
             const payload = { name: newName, handle: newHandle, art: newArt, decks: newDecks, updatedAt: Date.now() };
             const activityCol = collection(db, 'artifacts', appId, 'public', 'data', 'activity');
 
-            if (id) {
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', id), payload);
-                await addDoc(activityCol, { playerName: newName, type: 'profile', timestamp: Date.now() });
-            } else {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'players'), payload);
-                await addDoc(activityCol, { playerName: newName, type: 'new', timestamp: Date.now() });
+            try {
+                if (id) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', id), payload);
+                    await addDoc(activityCol, { playerName: newName, type: 'profile', timestamp: Date.now() });
+                } else {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'players'), payload);
+                    await addDoc(activityCol, { playerName: newName, type: 'new', timestamp: Date.now() });
+                }
+                window.closeModal();
+            } catch (err) {
+                showError("Save failed: " + err.message);
             }
-            window.closeModal();
         });
 
         const initAuth = async () => {
             try {
+                // RULE 3: Auth Before Queries. Ensure anonymous auth is enabled in Firebase Console.
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
             } catch (e) {
-                showError("Auth Error Code: " + e.code);
+                let helpfulHint = "";
+                if (e.code === 'auth/configuration-not-found') {
+                    helpfulHint = " (Action Required: Go to Firebase Console > Build > Authentication > Get Started > Native Providers > Enable 'Anonymous')";
+                }
+                showError("Portal Access Denied (Auth Error). Error: " + e.code + helpfulHint);
             }
         };
 
@@ -543,11 +537,12 @@
                 onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'players'), (snap) => {
                     playersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     playersData.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-                    document.getElementById('loadingState')?.remove();
+                    const loading = document.getElementById('loadingState');
+                    if (loading) loading.remove();
                     document.getElementById('errorDisplay').style.display = 'none';
                     renderGrid(document.getElementById('playerSearch').value);
                 }, (err) => {
-                    showError("Database Locked. Check Firestore Rules. Error: " + err.code);
+                    showError("Database Locked. Error: " + err.code + ". Ensure 'Anonymous Auth' is enabled and Firestore Rules are published.");
                 });
 
                 onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'activity'), (snap) => {
@@ -564,7 +559,7 @@
                     }).join('') || '<p class="text-gray-500 text-[10px] italic">Awaiting omens...</p>';
                 });
             } catch (e) {
-                showError("General Error: " + e.message);
+                showError("General Sync Error: " + e.message);
             }
         });
 
