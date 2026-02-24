@@ -185,20 +185,21 @@
         .remove-deck-btn { position: absolute; top: 12px; right: 12px; color: #666; transition: color 0.2s; }
         .remove-deck-btn:hover { color: #ef4444; }
 
-        /* Autocomplete dropdown styling */
         .autocomplete-container { position: relative; }
         .autocomplete-list {
             position: absolute; top: 100%; left: 0; right: 0;
             background: #1a1a1a; border: 1px solid var(--mtg-gold);
             border-top: none; border-radius: 0 0 12px 12px;
-            z-index: 1001; max-height: 200px; overflow-y: auto;
+            z-index: 1001; max-height: 250px; overflow-y: auto;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             display: none;
         }
         .autocomplete-item {
             padding: 10px 15px; cursor: pointer; color: #ccc;
-            font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.7rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex; justify-content: space-between; align-items: center;
         }
+        .autocomplete-item span.set-code { font-family: 'JetBrains Mono', monospace; opacity: 0.5; font-size: 0.6rem; }
         .autocomplete-item:hover { background: rgba(197, 164, 103, 0.15); color: white; }
     </style>
 </head>
@@ -218,7 +219,7 @@
         <div class="flame-container" id="flameContainer"></div>
         <div class="relative z-10 text-center px-4">
             <h1 class="draconis-font text-5xl md:text-9xl text-white mb-2 leading-none">
-                Decks, <span style="color: var(--mtg-gold)">Dice</span> , and Dives
+                Decks, <span style="color: var(--mtg-gold)">Dice,</span> and Dives
             </h1>
             <p class="text-white/80 text-[10px] md:text-lg uppercase tracking-[0.4em] font-bold">The Flavortown Playgroup Directory</p>
         </div>
@@ -234,7 +235,7 @@
             <div class="flex gap-6 md:gap-8 text-sm font-semibold uppercase tracking-widest min-w-fit">
                 <div class="text-center">
                     <span class="block text-gold text-xl md:text-2xl font-bold" id="totalPlayersDisplay" style="color: var(--mtg-gold)">0</span>
-                    <span class="text-gray-500 text-[8px] md:text-[10px]">Commanders</span>
+                    <span class="text-gray-500 text-[8px] md:text-[10px]">Legends</span>
                 </div>
                 <div class="text-center">
                     <span class="block text-orange-500 text-xl md:text-2xl font-bold" id="totalDecksDisplay">0</span>
@@ -270,7 +271,6 @@
         </aside>
     </div>
 
-    <!-- Edit Modal -->
     <div id="editModal" class="flex items-center justify-center p-4">
         <div class="glass-panel w-full max-w-4xl rounded-3xl p-6 md:p-10 overflow-hidden flex flex-col max-h-[90vh]">
             <div class="flex justify-between items-center mb-6 shrink-0">
@@ -294,7 +294,10 @@
                 </div>
                 <div>
                     <label class="text-[10px] uppercase font-bold text-gray-500 block mb-2 tracking-widest">Profile Card Art (Scryfall Crop URL)</label>
-                    <input type="url" id="editArt" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white text-sm focus:border-orange-500 outline-none transition-all" placeholder="https://cards.scryfall.io/art_crop/front/...">
+                    <div class="relative">
+                        <input type="url" id="editArt" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white text-sm focus:border-orange-500 outline-none transition-all" placeholder="Paste Scryfall Art Crop URL here...">
+                        <p class="text-[9px] text-gray-500 mt-2 px-1">Tip: Search a card on Scryfall, click "Download Art Crop" and paste that link here!</p>
+                    </div>
                 </div>
                 <div class="space-y-4">
                     <div class="flex justify-between items-center">
@@ -341,7 +344,7 @@
         const previewImg = document.getElementById('previewImg');
         const cardCache = new Map();
 
-        // Autocomplete Logic
+        // Advanced search: search all prints to allow alternate arts
         window.handleCommanderSearch = async (input) => {
             const query = input.value.trim();
             const listEl = input.nextElementSibling;
@@ -351,54 +354,80 @@
             }
 
             try {
-                const resp = await fetch(`https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(query)}`);
+                // Fetching prints specifically to allow picking alternate arts
+                const resp = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}+is:commander+unique:prints`);
                 const data = await resp.json();
+                
                 if (data.data && data.data.length > 0) {
-                    listEl.innerHTML = data.data.map(name => `<div class="autocomplete-item" onclick="window.selectCommander(this, '${name.replace(/'/g, "\\'")}')">${name}</div>`).join('');
+                    listEl.innerHTML = data.data.slice(0, 15).map(card => {
+                        const nameStr = card.name.replace(/'/g, "\\'");
+                        const setStr = card.set_name.replace(/'/g, "\\'");
+                        const artUrl = card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || "";
+                        const cropUrl = card.image_uris?.art_crop || card.card_faces?.[0]?.image_uris?.art_crop || "";
+                        
+                        return `
+                        <div class="autocomplete-item" onclick="window.selectCommander(this, '${nameStr}', '${artUrl}', '${cropUrl}')">
+                            <span class="truncate pr-2">${card.name}</span>
+                            <span class="set-code shrink-0">${card.set.toUpperCase()}</span>
+                        </div>`;
+                    }).join('');
                     listEl.style.display = 'block';
                 } else {
-                    listEl.style.display = 'none';
+                    // Fallback to simple autocomplete if exact commander search yields nothing
+                    const autoResp = await fetch(`https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(query)}`);
+                    const autoData = await autoResp.json();
+                    listEl.innerHTML = autoData.data.map(name => `<div class="autocomplete-item" onclick="window.selectCommander(this, '${name.replace(/'/g, "\\'")}', '', '')">${name}</div>`).join('');
+                    listEl.style.display = 'block';
                 }
-            } catch (err) { console.error("Autocomplete failed", err); }
+            } catch (err) { console.error("Search failed", err); }
         };
 
-        window.selectCommander = (item, name) => {
-            const input = item.closest('.autocomplete-container').querySelector('.deck-commander-input');
+        window.selectCommander = (item, name, previewUrl, cropUrl) => {
+            const row = item.closest('.modal-deck-input-row');
+            const input = row.querySelector('.deck-commander-input');
+            const previewInput = row.querySelector('.deck-art-cache');
+            
             input.value = name;
+            if (previewUrl) {
+                previewInput.value = previewUrl; // Store the specific print URL
+                cardCache.set(name, previewUrl);
+            }
+            
+            // Helpful: auto-fill the profile art crop if it's currently empty
+            const profileArtInput = document.getElementById('editArt');
+            if (!profileArtInput.value && cropUrl) {
+                profileArtInput.value = cropUrl;
+            }
+
             item.parentElement.style.display = 'none';
         };
 
-        const fetchCommanderByUrl = async (url) => {
-            if (!url) return null;
-            if (url.includes('scryfall.com/card/')) {
-                const parts = url.split('/');
-                const cardNamePart = parts[parts.length - 1] || parts[parts.length - 2];
-                return cardNamePart.replace(/-/g, ' ');
-            }
-            return null;
-        };
-
-        window.showCardPreview = async (commanderName, url, event) => {
-            let identifier = commanderName;
-            if (!identifier && url) identifier = await fetchCommanderByUrl(url);
-            if (!identifier) return;
+        window.showCardPreview = async (commanderName, specificArtUrl, event) => {
+            if (!commanderName) return;
             
             previewEl.style.display = 'block';
             updatePreviewPosition(event);
 
-            if (cardCache.has(identifier)) {
-                previewImg.src = cardCache.get(identifier);
+            // Priority 1: Use the specific art stored with the deck
+            if (specificArtUrl) {
+                previewImg.src = specificArtUrl;
+                return;
+            }
+
+            // Priority 2: Use cache
+            if (cardCache.has(commanderName)) {
+                previewImg.src = cardCache.get(commanderName);
                 return;
             }
 
             previewImg.src = "https://cards.scryfall.io/large/front/0/e/0e53a20d-7049-41e7-8848-f68695d6f140.jpg"; 
 
             try {
-                const resp = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(identifier)}`);
+                const resp = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(commanderName)}`);
                 const data = await resp.json();
                 const imgSrc = data.image_uris?.normal || data.card_faces?.[0]?.image_uris?.normal;
                 if (imgSrc) {
-                    cardCache.set(identifier, imgSrc);
+                    cardCache.set(commanderName, imgSrc);
                     previewImg.src = imgSrc;
                 }
             } catch (e) { console.error("Scryfall lookup failed", e); }
@@ -451,8 +480,9 @@
                                placeholder="WUBRG" value="${deckData.colors || ''}">
                         <div class="autocomplete-container flex-grow">
                             <input type="text" class="deck-commander-input w-full bg-black/40 border border-white/5 p-3 rounded-lg text-white text-xs focus:border-orange-500 outline-none" 
-                               placeholder="Commander Name" value="${deckData.commander || ''}" oninput="window.handleCommanderSearch(this)" onblur="setTimeout(() => this.nextElementSibling.style.display='none', 200)">
+                               placeholder="Commander Name" value="${deckData.commander || ''}" oninput="window.handleCommanderSearch(this)" onblur="setTimeout(() => this.nextElementSibling.style.display='none', 250)">
                             <div class="autocomplete-list"></div>
+                            <input type="hidden" class="deck-art-cache" value="${deckData.artUrl || ''}">
                         </div>
                     </div>
                 </div>
@@ -568,10 +598,10 @@
                                 const originalIdx = p.decks.findIndex(orig => orig.name === d.name);
                                 const isLiked = myLikes.includes(`${p.id}_${originalIdx}`);
                                 const commName = (d.commander || "").replace(/'/g, "\\'");
-                                const deckUrl = (d.url || "").replace(/'/g, "\\'");
+                                const artUrl = (d.artUrl || "").replace(/'/g, "\\'");
                                 return `
                                 <div class="deck-row" 
-                                     onmouseenter="window.showCardPreview('${commName}', '${deckUrl}', event)" 
+                                     onmouseenter="window.showCardPreview('${commName}', '${artUrl}', event)" 
                                      onmouseleave="window.hideCardPreview()" 
                                      onmousemove="window.updatePreviewPosition(event)">
                                     <a href="${d.url || '#'}" target="_blank" class="deck-link">${d.name}</a>
@@ -641,6 +671,7 @@
                     name, url: row.querySelector('.deck-url-input').value.trim(),
                     colors: row.querySelector('.deck-colors-input').value.trim().toUpperCase(),
                     commander: row.querySelector('.deck-commander-input').value.trim(),
+                    artUrl: row.querySelector('.deck-art-cache').value.trim(),
                     likes: parseInt(row.querySelector('.deck-likes-input').value) || 0
                 };
             }).filter(d => d !== null);
