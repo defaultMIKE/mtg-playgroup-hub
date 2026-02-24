@@ -204,6 +204,12 @@
         }
         .autocomplete-item span.set-code { font-family: 'JetBrains Mono', monospace; opacity: 0.5; font-size: 0.6rem; }
         .autocomplete-item:hover { background: rgba(197, 164, 103, 0.15); color: white; }
+        
+        .delete-trigger { color: #666; transition: all 0.2s; font-size: 10px; cursor: pointer; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+        .delete-trigger:hover { color: #ef4444; }
+        .delete-trigger.confirm { color: #ef4444; font-weight: 800; animation: pulseRed 1.5s infinite; }
+        
+        @keyframes pulseRed { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body class="pb-20">
@@ -311,10 +317,15 @@
                     </div>
                     <div id="deckInputsContainer" class="space-y-2"></div>
                 </div>
-                <div class="pt-4 shrink-0">
-                    <button type="submit" id="saveButton" class="w-full py-5 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-bold uppercase tracking-[0.2em] text-sm transition-all shadow-xl shadow-orange-900/20 active:scale-95">
+                <div class="pt-4 flex flex-col md:flex-row gap-4 shrink-0">
+                    <button type="submit" id="saveButton" class="flex-grow py-5 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-bold uppercase tracking-[0.2em] text-sm transition-all shadow-xl shadow-orange-900/20 active:scale-95">
                         Inscribe onto the Scroll
                     </button>
+                    <div id="deleteContainer" class="hidden flex items-center justify-center px-4">
+                        <span id="deleteBtn" onclick="window.confirmDelete()" class="delete-trigger">
+                            Vanish Profile
+                        </span>
+                    </div>
                 </div>
             </form>
         </div>
@@ -342,6 +353,7 @@
 
         let playersData = [];
         let currentUser = null;
+        let deleteConfirmed = false;
 
         const NAMES_TO_REMOVE = ["Alex", "Justin", "Michael", "Bobby", "Jason", "Will", "Eric", "Dee", "Jesse"];
 
@@ -461,6 +473,39 @@
         window.closeModal = () => {
             document.getElementById('editModal').style.display = 'none';
             document.getElementById('saveButton').disabled = false;
+            deleteConfirmed = false;
+            const delBtn = document.getElementById('deleteBtn');
+            delBtn.innerText = "Vanish Profile";
+            delBtn.classList.remove('confirm');
+        };
+
+        window.confirmDelete = async () => {
+            const id = document.getElementById('editId').value;
+            if (!id) return;
+            const delBtn = document.getElementById('deleteBtn');
+            
+            if (!deleteConfirmed) {
+                deleteConfirmed = true;
+                delBtn.innerText = "Confirm Deletion?";
+                delBtn.classList.add('confirm');
+                return;
+            }
+            
+            try {
+                const p = playersData.find(x => x.id === id);
+                await deleteDoc(doc(db, ...PATH, 'players', id));
+                if (p) {
+                    await addDoc(collection(db, ...PATH, 'activity'), { 
+                        type: 'update', actorName: p.name, details: 'has left the playgroup. Their legend fades...', timestamp: Date.now() 
+                    });
+                }
+                closeModal();
+            } catch (err) {
+                showError("The scroll refused to be burned.");
+                deleteConfirmed = false;
+                delBtn.innerText = "Vanish Profile";
+                delBtn.classList.remove('confirm');
+            }
         };
 
         window.addDeckRow = (deckData = {}) => {
@@ -506,6 +551,7 @@
             document.getElementById('editHandle').value = "";
             document.getElementById('editArt').value = "";
             document.getElementById('deckInputsContainer').innerHTML = "";
+            document.getElementById('deleteContainer').classList.add('hidden');
             addDeckRow();
             document.getElementById('modalTitle').textContent = "Join the Playgroup";
             document.getElementById('editModal').style.display = 'flex';
@@ -518,6 +564,7 @@
             document.getElementById('editName').value = p.name;
             document.getElementById('editHandle').value = p.handle;
             document.getElementById('editArt').value = p.art || '';
+            document.getElementById('deleteContainer').classList.remove('hidden');
             const container = document.getElementById('deckInputsContainer');
             container.innerHTML = "";
             (p.decks || []).forEach(d => addDeckRow(d));
@@ -542,7 +589,6 @@
             } else {
                 deck.likes = (deck.likes || 0) + 1;
                 myLikes.push(deckId);
-                // Set attribution to "A Guest" since we don't have a specific logged-in user name
                 await addDoc(collection(db, ...PATH, 'activity'), { 
                     type: 'love', 
                     actorName: 'A Guest',
@@ -577,7 +623,6 @@
             const term = queryStr.toLowerCase().trim();
             const myLikes = getLikedDecks();
             
-            // Map common color terms to WUBRG
             const colorMap = { 
                 'white': 'w', 'blue': 'u', 'black': 'b', 'red': 'r', 'green': 'g', 
                 'colorless': 'c', 'mono': '', 'azorius': 'wu', 'dimir': 'ub', 
@@ -593,29 +638,19 @@
 
                 const nameMatch = (p.name || "").toLowerCase().includes(term) || (p.handle || "").toLowerCase().includes(term);
                 
-                // Filtering decks based on the search term
                 const filteredDecks = decks.filter(d => {
                     const dName = (d.name || "").toLowerCase();
                     const dComm = (d.commander || "").toLowerCase();
                     const dColors = (d.colors || "").toLowerCase();
-                    
-                    // Match by text (name, commander)
                     const textMatch = dName.includes(term) || dComm.includes(term);
-                    
-                    // Match by color (handle keywords or WUBRG strings)
                     let colorMatch = false;
                     if (isColorSearch) {
                         const targetColor = colorMap[term] || term;
-                        // For specific letters like "w", we want to see if the deck HAS that color
-                        // For specific guild names like "izzet", we want to see if it HAS those colors
                         colorMatch = targetColor.split('').every(char => dColors.includes(char));
                     }
-
                     return textMatch || colorMatch;
                 });
 
-                // If the player name matches, we show ALL their decks. 
-                // If not, we only show the decks that match the search criteria.
                 return { ...p, filteredDecks: nameMatch ? decks : filteredDecks };
             }).filter(p => p.filteredDecks.length > 0);
             
@@ -675,9 +710,7 @@
         const cleanupRestrictedNames = async (players) => {
             for (const p of players) {
                 if (NAMES_TO_REMOVE.includes(p.name)) {
-                    try {
-                        await deleteDoc(doc(db, ...PATH, 'players', p.id));
-                    } catch (e) { console.error("Cleanup error", e); }
+                    try { await deleteDoc(doc(db, ...PATH, 'players', p.id)); } catch (e) {}
                 }
             }
         };
@@ -696,20 +729,28 @@
             }, (err) => showError("Connection Lost"));
 
             onSnapshot(collection(db, ...PATH, 'activity'), (snap) => {
-                const acts = snap.docs.map(d => d.data()).sort((a,b) => b.timestamp - a.timestamp).slice(0, 20);
+                const acts = snap.docs.map(d => d.data()).sort((a,b) => b.timestamp - a.timestamp).slice(0, 30);
                 const actList = document.getElementById('activityList');
                 if (actList) {
-                    actList.innerHTML = acts.map(a => `
+                    actList.innerHTML = acts.map(a => {
+                        let icon = "fa-fire";
+                        let color = "text-orange-500";
+                        if (a.type === 'love') { icon = "fa-heart"; color = "text-red-500"; }
+                        if (a.type === 'join') { icon = "fa-user-plus"; color = "text-green-500"; }
+                        if (a.type === 'update') { icon = "fa-pen-fancy"; color = "text-blue-500"; }
+                        
+                        return `
                         <div class="activity-item p-3 mb-2 flex gap-3 items-start">
-                            <i class="fas fa-fire mt-1 text-[8px] text-orange-500"></i>
+                            <i class="fas ${icon} mt-1 text-[8px] ${color}"></i>
                             <div class="flex-grow min-w-0">
-                                <p class="text-[10px] text-white/80">
-                                    <span class="text-white font-bold">${a.actorName || a.playerName || "Someone"}</span>
-                                    ${a.type === 'love' ? `loves <span class="text-orange-400 font-bold">${a.targetPlayer}</span>'s ${a.deckName || 'deck'}` : (a.details || 'updated their scroll')}
+                                <p class="text-[10px] text-white/80 leading-relaxed">
+                                    <span class="text-white font-bold">${a.actorName}</span>
+                                    ${a.type === 'love' ? `loves <span class="text-orange-400 font-bold">${a.targetPlayer}</span>'s ${a.deckName}` : a.details}
                                 </p>
+                                <p class="text-[8px] text-white/20 mt-0.5">${formatTime(a.timestamp)}</p>
                             </div>
                         </div>
-                    `).join('');
+                    `}).join('');
                 }
             });
         });
@@ -719,11 +760,13 @@
             const saveBtn = document.getElementById('saveButton');
             saveBtn.disabled = true;
             saveBtn.innerText = "Transcribing...";
+            
             const id = document.getElementById('editId').value;
             const newName = document.getElementById('editName').value.trim();
             const newHandle = document.getElementById('editHandle').value.trim();
             const newArt = document.getElementById('editArt').value.trim();
             const deckRows = document.querySelectorAll('.modal-deck-input-row');
+            
             const rawDecks = Array.from(deckRows).map(row => {
                 const name = row.querySelector('.deck-name-input').value.trim();
                 if (!name) return null;
@@ -737,14 +780,33 @@
             }).filter(d => d !== null);
 
             const payload = { name: newName, handle: newHandle, art: newArt, decks: rawDecks, updatedAt: Date.now() };
+            
             try {
                 if (id) {
+                    const existing = playersData.find(p => p.id === id);
                     await updateDoc(doc(db, ...PATH, 'players', id), payload);
+                    
+                    let activityDetails = "updated their legend profile";
+                    if (existing) {
+                        const oldDecks = existing.decks || [];
+                        const newDecks = rawDecks || [];
+                        if (newDecks.length > oldDecks.length) {
+                            const diff = newDecks.length - oldDecks.length;
+                            activityDetails = `added ${diff} new deck${diff > 1 ? 's' : ''} to their arsenal`;
+                        } else if (newName !== existing.name) {
+                            activityDetails = `changed their name to ${newName}`;
+                        } else {
+                            activityDetails = "refined their commander arsenal";
+                        }
+                    }
+
+                    await addDoc(collection(db, ...PATH, 'activity'), { 
+                        type: 'update', actorName: newName, details: activityDetails, timestamp: Date.now() 
+                    });
                 } else {
                     await addDoc(collection(db, ...PATH, 'players'), payload);
-                    // Add creation activity
                     await addDoc(collection(db, ...PATH, 'activity'), { 
-                        type: 'update', actorName: newName, details: 'joined the playgroup!', timestamp: Date.now() 
+                        type: 'join', actorName: newName, details: 'just joined the Flavortown playgroup!', timestamp: Date.now() 
                     });
                 }
                 closeModal();
