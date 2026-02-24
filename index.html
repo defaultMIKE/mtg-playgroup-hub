@@ -19,7 +19,6 @@
             --mana-black: #150b00;
             --mana-red: #d3202a;
             --mana-green: #00733d;
-            --discord-blurple: #5865F2;
         }
 
         body {
@@ -50,10 +49,7 @@
         }
 
         @media (min-width: 768px) {
-            .hero-banner {
-                height: 360px;
-                margin-bottom: -80px;
-            }
+            .hero-banner { height: 360px; margin-bottom: -80px; }
         }
 
         .mtg-pattern-overlay {
@@ -108,12 +104,6 @@
             border-radius: 1.5rem;
         }
 
-        @media (max-width: 767px) {
-            .player-card { height: auto; min-height: 280px; padding-bottom: 1rem; }
-            .content-wrap { padding: 1.25rem !important; }
-            .card-art-overlay { opacity: 0.12 !important; }
-        }
-
         @media (min-width: 768px) {
             .player-card { height: 520px; }
             .player-card:hover { transform: translateY(-8px); border-color: var(--mtg-gold); box-shadow: 0 20px 50px rgba(255, 77, 0, 0.2); }
@@ -152,7 +142,7 @@
         .pip-R { background: var(--mana-red); color: white; }
         .pip-G { background: var(--mana-green); color: white; }
 
-        .activity-feed { max-height: 600px; overflow-y: auto; scrollbar-width: thin; }
+        .activity-feed { max-height: 400px; overflow-y: auto; scrollbar-width: thin; }
         .activity-item { border-left: 2px solid var(--mtg-gold); animation: slideIn 0.3s ease-out; background: rgba(255, 255, 255, 0.03); border-radius: 0 8px 8px 0; }
 
         @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
@@ -174,42 +164,47 @@
         .like-btn { cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px; font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.05); }
         .like-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.05); }
         .like-btn.liked { color: #ff4d4d; background: rgba(255, 77, 77, 0.1); }
-        .like-btn.liked i { font-weight: 900; }
+        
+        #errorDisplay { display: none; position: fixed; top: 20px; right: 20px; z-index: 1000; background: rgba(127, 29, 29, 0.95); color: white; padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid #ef4444; max-width: 320px; }
 
-        #errorDisplay { display: none; position: fixed; top: 20px; right: 20px; z-index: 1000; background: rgba(127, 29, 29, 0.95); color: white; padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid #ef4444; max-width: 320px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        /* Sidebar Search Specific Styles */
+        .sidebar-search-container { position: relative; }
+        .sidebar-results {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: #1a1a1a; border: 1px solid var(--mtg-gold);
+            border-top: none; border-radius: 0 0 16px 16px;
+            z-index: 50; max-height: 300px; overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+            display: none;
+        }
+        .sidebar-result-item {
+            padding: 12px 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;
+        }
+        .sidebar-result-item:hover { background: rgba(197, 164, 103, 0.15); }
+        .sidebar-result-item .name { font-size: 0.75rem; font-weight: 600; color: #eee; }
+        .sidebar-result-item .set { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: var(--mtg-gold); }
 
-        .modal-scrollbar::-webkit-scrollbar { width: 6px; }
-        .modal-scrollbar::-webkit-scrollbar-thumb { background: rgba(197, 164, 103, 0.3); border-radius: 10px; }
+        .delete-trigger { color: #666; transition: all 0.2s; font-size: 10px; cursor: pointer; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+        .delete-trigger:hover { color: #ef4444; }
+        .delete-trigger.confirm { color: #ef4444; animation: pulseRed 1.5s infinite; }
+        
+        @keyframes pulseRed { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
         .modal-deck-input-row { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 16px; margin-bottom: 12px; position: relative; }
-        .remove-deck-btn { position: absolute; top: 12px; right: 12px; color: #666; transition: color 0.2s; }
-        .remove-deck-btn:hover { color: #ef4444; }
-
         .reorder-btn { color: #555; transition: all 0.2s; padding: 4px; border-radius: 4px; }
         .reorder-btn:hover { color: var(--mtg-gold); background: rgba(255,255,255,0.05); }
 
-        .autocomplete-container { position: relative; }
         .autocomplete-list {
             position: absolute; top: 100%; left: 0; right: 0;
             background: #1a1a1a; border: 1px solid var(--mtg-gold);
-            border-top: none; border-radius: 0 0 12px 12px;
-            z-index: 1001; max-height: 250px; overflow-y: auto;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            display: none;
+            z-index: 1001; max-height: 250px; overflow-y: auto; display: none;
         }
         .autocomplete-item {
-            padding: 10px 15px; cursor: pointer; color: #ccc;
-            font-size: 0.7rem; border-bottom: 1px solid rgba(255,255,255,0.05);
-            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 15px; cursor: pointer; color: #ccc; font-size: 0.7rem; 
+            border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;
         }
-        .autocomplete-item span.set-code { font-family: 'JetBrains Mono', monospace; opacity: 0.5; font-size: 0.6rem; }
         .autocomplete-item:hover { background: rgba(197, 164, 103, 0.15); color: white; }
-        
-        .delete-trigger { color: #666; transition: all 0.2s; font-size: 10px; cursor: pointer; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
-        .delete-trigger:hover { color: #ef4444; }
-        .delete-trigger.confirm { color: #ef4444; font-weight: 800; animation: pulseRed 1.5s infinite; }
-        
-        @keyframes pulseRed { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body class="pb-20">
@@ -220,7 +215,7 @@
     </div>
 
     <div id="cardPreview">
-        <img id="previewImg" src="" alt="Commander Preview" class="w-full h-auto block">
+        <img id="previewImg" src="" alt="Card Preview" class="w-full h-auto block">
     </div>
 
     <div class="hero-banner flex items-center justify-center">
@@ -238,7 +233,7 @@
         <div class="glass-panel rounded-3xl p-4 md:p-6 flex flex-col lg:flex-row gap-4 md:gap-6 items-center">
             <div class="relative flex-grow w-full">
                 <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-gray-500"></i>
-                <input type="text" id="playerSearch" placeholder="Search names, decks, commanders, or colors (e.g. 'blue', 'WUB', 'Sliver')..." 
+                <input type="text" id="playerSearch" placeholder="Search names, decks, commanders, or colors..." 
                     class="w-full bg-black/50 border border-white/10 rounded-2xl py-3 md:py-4 pl-12 md:pl-14 pr-6 focus:outline-none focus:border-orange-500 text-white transition-all text-sm md:text-lg">
             </div>
             <div class="flex gap-6 md:gap-8 text-sm font-semibold uppercase tracking-widest min-w-fit">
@@ -264,13 +259,27 @@
             </main>
         </div>
 
-        <aside class="xl:col-span-1 space-y-4">
+        <aside class="xl:col-span-1 space-y-6">
+            <!-- New Scryfall Card Search -->
+            <div class="glass-panel rounded-2xl p-5 sidebar-search-container">
+                <h3 class="mtg-font text-[10px] text-gold uppercase tracking-[0.2em] mb-3" style="color: var(--mtg-gold)">Scryfall Oracle</h3>
+                <div class="relative">
+                    <i class="fas fa-bolt absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 text-xs"></i>
+                    <input type="text" id="sidebarCardSearch" placeholder="Search any MTG card..." 
+                        class="w-full bg-black/40 border border-white/5 rounded-xl py-3 pl-10 pr-4 text-xs text-white focus:outline-none focus:border-gold transition-all"
+                        oninput="window.handleSidebarSearch(this)"
+                        onblur="setTimeout(() => document.getElementById('sidebarResults').style.display = 'none', 300)">
+                </div>
+                <div id="sidebarResults" class="sidebar-results"></div>
+            </div>
+
             <button onclick="window.addNewPlayer()" class="w-full bg-orange-600 hover:bg-orange-500 text-white p-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20">
                 <i class="fas fa-plus-circle text-sm"></i> Join the Playgroup
             </button>
+
             <div class="glass-panel rounded-2xl p-6 hidden xl:block sticky top-8">
                 <h2 class="mtg-font text-lg text-white mb-4 flex items-center gap-2">
-                    <i class="fas fa-bolt text-gold text-xs" style="color: var(--mtg-gold)"></i>
+                    <i class="fas fa-scroll text-gold text-xs" style="color: var(--mtg-gold)"></i>
                     Recent Omens
                 </h2>
                 <div class="activity-feed space-y-3 pr-2" id="activityList">
@@ -289,30 +298,27 @@
                 </button>
             </div>
             
-            <form id="editForm" class="space-y-8 overflow-y-auto pr-4 modal-scrollbar">
+            <form id="editForm" class="space-y-8 overflow-y-auto pr-4">
                 <input type="hidden" id="editId">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="text-[10px] uppercase font-bold text-gray-500 block mb-2 tracking-widest">Display Name</label>
-                        <input type="text" id="editName" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white text-sm focus:border-orange-500 outline-none transition-all" required placeholder="e.g. Guy Fieri">
+                        <input type="text" id="editName" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white text-sm focus:border-orange-500 outline-none transition-all" required>
                     </div>
                     <div>
                         <label class="text-[10px] uppercase font-bold text-gray-500 block mb-2 tracking-widest">Discord Handle</label>
-                        <input type="text" id="editHandle" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white text-sm focus:border-orange-500 outline-none transition-all" required placeholder="e.g. flavortown#1337">
+                        <input type="text" id="editHandle" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white text-sm focus:border-orange-500 outline-none transition-all" required>
                     </div>
                 </div>
                 <div>
                     <label class="text-[10px] uppercase font-bold text-gray-500 block mb-2 tracking-widest">Profile Card Art (Scryfall Crop URL)</label>
-                    <div class="relative">
-                        <input type="url" id="editArt" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white text-sm focus:border-orange-500 outline-none transition-all" placeholder="Paste Scryfall Art Crop URL here...">
-                        <p class="text-[9px] text-gray-500 mt-2 px-1">Tip: Search a card on Scryfall, click "Download Art Crop" and paste that link here!</p>
-                    </div>
+                    <input type="url" id="editArt" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white text-sm focus:border-orange-500 outline-none transition-all">
                 </div>
                 <div class="space-y-4">
                     <div class="flex justify-between items-center">
                         <label class="text-[11px] uppercase font-bold text-orange-500 tracking-[0.2em]">Your Arsenal</label>
-                        <button type="button" onclick="addDeckRow()" class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[10px] text-white font-bold uppercase tracking-wider transition-all flex items-center gap-2">
-                            <i class="fas fa-plus"></i> Add New Deck
+                        <button type="button" onclick="addDeckRow()" class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[10px] text-white font-bold uppercase tracking-wider transition-all">
+                            Add New Deck
                         </button>
                     </div>
                     <div id="deckInputsContainer" class="space-y-2"></div>
@@ -322,9 +328,7 @@
                         Inscribe onto the Scroll
                     </button>
                     <div id="deleteContainer" class="hidden flex items-center justify-center px-4">
-                        <span id="deleteBtn" onclick="window.confirmDelete()" class="delete-trigger">
-                            Vanish Profile
-                        </span>
+                        <span id="deleteBtn" onclick="window.confirmDelete()" class="delete-trigger">Vanish Profile</span>
                     </div>
                 </div>
             </form>
@@ -352,115 +356,77 @@
         const PATH = ['artifacts', appId, 'public', 'data'];
 
         let playersData = [];
-        let currentUser = null;
         let deleteConfirmed = false;
-
-        const NAMES_TO_REMOVE = ["Alex", "Justin", "Michael", "Bobby", "Jason", "Will", "Eric", "Dee", "Jesse"];
-
         const previewEl = document.getElementById('cardPreview');
         const previewImg = document.getElementById('previewImg');
         const cardCache = new Map();
 
-        window.moveDeck = (btn, direction) => {
-            const row = btn.closest('.modal-deck-input-row');
-            const container = document.getElementById('deckInputsContainer');
-            if (direction === 'up') {
-                const prev = row.previousElementSibling;
-                if (prev) container.insertBefore(row, prev);
-            } else {
-                const next = row.nextElementSibling;
-                if (next) container.insertBefore(next, row);
-            }
-        };
-
-        window.handleCommanderSearch = async (input) => {
+        // SCRYFALL SIDEBAR SEARCH
+        window.handleSidebarSearch = async (input) => {
             const query = input.value.trim();
-            const listEl = input.nextElementSibling;
+            const resultsEl = document.getElementById('sidebarResults');
             if (query.length < 3) {
-                listEl.style.display = 'none';
+                resultsEl.style.display = 'none';
                 return;
             }
 
             try {
-                const resp = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}+is:commander+unique:prints`);
+                const resp = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}`);
                 const data = await resp.json();
                 
                 if (data.data && data.data.length > 0) {
-                    listEl.innerHTML = data.data.slice(0, 15).map(card => {
+                    resultsEl.innerHTML = data.data.slice(0, 10).map(card => {
                         const nameStr = card.name.replace(/'/g, "\\'");
                         const artUrl = card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || "";
-                        const cropUrl = card.image_uris?.art_crop || card.card_faces?.[0]?.image_uris?.art_crop || "";
-                        
                         return `
-                        <div class="autocomplete-item" onclick="window.selectCommander(this, '${nameStr}', '${artUrl}', '${cropUrl}')">
-                            <span class="truncate pr-2">${card.name}</span>
-                            <span class="set-code shrink-0">${card.set.toUpperCase()}</span>
+                        <div class="sidebar-result-item" 
+                             onmouseenter="window.showCardPreview('${nameStr}', '${artUrl}', event)" 
+                             onmouseleave="window.hideCardPreview()"
+                             onmousemove="window.updatePreviewPosition(event)">
+                            <span class="name truncate">${card.name}</span>
+                            <span class="set">${card.set.toUpperCase()}</span>
                         </div>`;
                     }).join('');
-                    listEl.style.display = 'block';
-                } else {
-                    const autoResp = await fetch(`https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(query)}`);
-                    const autoData = await autoResp.json();
-                    listEl.innerHTML = autoData.data.map(name => `<div class="autocomplete-item" onclick="window.selectCommander(this, '${name.replace(/'/g, "\\'")}', '', '')">${name}</div>`).join('');
-                    listEl.style.display = 'block';
+                    resultsEl.style.display = 'block';
                 }
             } catch (err) { console.error("Search failed", err); }
         };
 
-        window.selectCommander = (item, name, previewUrl, cropUrl) => {
-            const row = item.closest('.modal-deck-input-row');
-            const input = row.querySelector('.deck-commander-input');
-            const previewInput = row.querySelector('.deck-art-cache');
-            
-            input.value = name;
-            if (previewUrl) {
-                previewInput.value = previewUrl;
-                cardCache.set(name, previewUrl);
-            }
-            const profileArtInput = document.getElementById('editArt');
-            if (!profileArtInput.value && cropUrl) {
-                profileArtInput.value = cropUrl;
-            }
-            item.parentElement.style.display = 'none';
-        };
-
-        window.showCardPreview = async (commanderName, specificArtUrl, event) => {
-            if (!commanderName) return;
+        // SHARED PREVIEW LOGIC
+        window.showCardPreview = async (name, url, event) => {
+            if (!name) return;
             previewEl.style.display = 'block';
             updatePreviewPosition(event);
-            if (specificArtUrl) {
-                previewImg.src = specificArtUrl;
+            if (url) {
+                previewImg.src = url;
                 return;
             }
-            if (cardCache.has(commanderName)) {
-                previewImg.src = cardCache.get(commanderName);
+            if (cardCache.has(name)) {
+                previewImg.src = cardCache.get(name);
                 return;
             }
-            previewImg.src = "https://cards.scryfall.io/large/front/0/e/0e53a20d-7049-41e7-8848-f68695d6f140.jpg"; 
             try {
-                const resp = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(commanderName)}`);
+                const resp = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`);
                 const data = await resp.json();
                 const imgSrc = data.image_uris?.normal || data.card_faces?.[0]?.image_uris?.normal;
                 if (imgSrc) {
-                    cardCache.set(commanderName, imgSrc);
+                    cardCache.set(name, imgSrc);
                     previewImg.src = imgSrc;
                 }
-            } catch (e) { console.error("Scryfall lookup failed", e); }
+            } catch (e) {}
         };
 
         window.hideCardPreview = () => { previewEl.style.display = 'none'; };
-
         window.updatePreviewPosition = (e) => {
-            if (previewEl.style.display === 'block') {
-                const x = e.clientX + 20;
-                let y = e.clientY - 140;
-                if (y + 380 > window.innerHeight) y = window.innerHeight - 390;
-                if (x + 300 > window.innerWidth) previewEl.style.left = `${e.clientX - 300}px`;
-                else previewEl.style.left = `${x}px`;
-                previewEl.style.top = `${y}px`;
-            }
+            const x = e.clientX + 20;
+            let y = e.clientY - 140;
+            if (y + 380 > window.innerHeight) y = window.innerHeight - 390;
+            if (x + 300 > window.innerWidth) previewEl.style.left = `${e.clientX - 300}px`;
+            else previewEl.style.left = `${x}px`;
+            previewEl.style.top = `${y}px`;
         };
 
+        // UTILITIES
         const getLikedDecks = () => JSON.parse(localStorage.getItem('flavortown_likes') || '[]');
         const saveLikedDecks = (likes) => localStorage.setItem('flavortown_likes', JSON.stringify(likes));
         const showError = (msg) => {
@@ -472,40 +438,23 @@
 
         window.closeModal = () => {
             document.getElementById('editModal').style.display = 'none';
-            document.getElementById('saveButton').disabled = false;
             deleteConfirmed = false;
-            const delBtn = document.getElementById('deleteBtn');
-            delBtn.innerText = "Vanish Profile";
-            delBtn.classList.remove('confirm');
         };
 
         window.confirmDelete = async () => {
             const id = document.getElementById('editId').value;
             if (!id) return;
             const delBtn = document.getElementById('deleteBtn');
-            
             if (!deleteConfirmed) {
                 deleteConfirmed = true;
                 delBtn.innerText = "Confirm Deletion?";
                 delBtn.classList.add('confirm');
                 return;
             }
-            
             try {
-                const p = playersData.find(x => x.id === id);
                 await deleteDoc(doc(db, ...PATH, 'players', id));
-                if (p) {
-                    await addDoc(collection(db, ...PATH, 'activity'), { 
-                        type: 'update', actorName: p.name, details: 'has left the playgroup. Their legend fades...', timestamp: Date.now() 
-                    });
-                }
                 closeModal();
-            } catch (err) {
-                showError("The scroll refused to be burned.");
-                deleteConfirmed = false;
-                delBtn.innerText = "Vanish Profile";
-                delBtn.classList.remove('confirm');
-            }
+            } catch (err) { showError("The scroll refused to be burned."); }
         };
 
         window.addDeckRow = (deckData = {}) => {
@@ -516,31 +465,20 @@
             row.className = 'modal-deck-input-row';
             row.innerHTML = `
                 <div class="absolute top-2 right-2 flex items-center gap-1">
-                    <button type="button" onclick="window.moveDeck(this, 'up')" class="reorder-btn" title="Move Up"><i class="fas fa-arrow-up text-[10px]"></i></button>
-                    <button type="button" onclick="window.moveDeck(this, 'down')" class="reorder-btn" title="Move Down"><i class="fas fa-arrow-down text-[10px]"></i></button>
-                    <button type="button" onclick="document.getElementById('${rowId}').remove()" class="remove-deck-btn relative !top-0 !right-0 ml-2">
-                        <i class="fas fa-times"></i>
+                    <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-gray-600 hover:text-red-500 transition-colors">
+                        <i class="fas fa-times text-xs"></i>
                     </button>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 pr-20">
-                    <div>
-                        <input type="text" class="deck-name-input w-full bg-black/40 border border-white/5 p-3 rounded-lg text-white text-xs focus:border-orange-500 outline-none" 
-                               placeholder="Deck Name (e.g. Eldrazi Unbound)" value="${deckData.name || ''}" required>
-                    </div>
-                    <div class="flex gap-2">
-                        <input type="text" maxlength="5" class="deck-colors-input w-24 bg-black/40 border border-white/5 p-3 rounded-lg text-white text-xs font-mono uppercase focus:border-orange-500 outline-none" 
-                               placeholder="WUBRG" value="${deckData.colors || ''}">
-                        <div class="autocomplete-container flex-grow">
-                            <input type="text" class="deck-commander-input w-full bg-black/40 border border-white/5 p-3 rounded-lg text-white text-xs focus:border-orange-500 outline-none" 
-                               placeholder="Commander Name" value="${deckData.commander || ''}" oninput="window.handleCommanderSearch(this)" onblur="setTimeout(() => this.nextElementSibling.style.display='none', 250)">
-                            <div class="autocomplete-list"></div>
-                            <input type="hidden" class="deck-art-cache" value="${deckData.artUrl || ''}">
-                        </div>
-                    </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 pr-8">
+                    <input type="text" class="deck-name-input bg-black/40 border border-white/5 p-3 rounded-lg text-white text-xs" placeholder="Deck Name" value="${deckData.name || ''}" required>
+                    <input type="text" class="deck-commander-input bg-black/40 border border-white/5 p-3 rounded-lg text-white text-xs" placeholder="Commander" value="${deckData.commander || ''}">
                 </div>
-                <input type="url" class="deck-url-input w-full bg-black/40 border border-white/5 p-3 rounded-lg text-white text-[10px] focus:border-orange-500 outline-none" 
-                       placeholder="Decklist Link (Moxfield/Scryfall)" value="${deckData.url || ''}">
+                <div class="flex gap-3">
+                    <input type="text" maxlength="5" class="deck-colors-input w-24 bg-black/40 border border-white/5 p-3 rounded-lg text-white text-xs font-mono uppercase" placeholder="WUBRG" value="${deckData.colors || ''}">
+                    <input type="url" class="deck-url-input flex-grow bg-black/40 border border-white/5 p-3 rounded-lg text-white text-[10px]" placeholder="Decklist URL" value="${deckData.url || ''}">
+                </div>
                 <input type="hidden" class="deck-likes-input" value="${deckData.likes || 0}">
+                <input type="hidden" class="deck-art-cache" value="${deckData.artUrl || ''}">
             `;
             container.appendChild(row);
         };
@@ -568,7 +506,6 @@
             const container = document.getElementById('deckInputsContainer');
             container.innerHTML = "";
             (p.decks || []).forEach(d => addDeckRow(d));
-            if ((p.decks || []).length === 0) addDeckRow();
             document.getElementById('modalTitle').textContent = `Update ${p.name}`;
             document.getElementById('editModal').style.display = 'flex';
         };
@@ -581,25 +518,16 @@
             const isLiked = myLikes.includes(deckId);
             const newDecks = [...player.decks];
             const deck = newDecks[deckIndex];
-            if (!deck) return;
-            
             if (isLiked) {
                 deck.likes = Math.max(0, (deck.likes || 1) - 1);
                 myLikes = myLikes.filter(id => id !== deckId);
             } else {
                 deck.likes = (deck.likes || 0) + 1;
                 myLikes.push(deckId);
-                await addDoc(collection(db, ...PATH, 'activity'), { 
-                    type: 'love', 
-                    actorName: 'A Guest',
-                    targetPlayer: player.name, 
-                    deckName: deck.name, 
-                    timestamp: Date.now() 
-                });
+                await addDoc(collection(db, ...PATH, 'activity'), { type: 'love', actorName: 'A Guest', targetPlayer: player.name, deckName: deck.name, timestamp: Date.now() });
             }
             saveLikedDecks(myLikes);
-            try { await updateDoc(doc(db, ...PATH, 'players', playerId), { decks: newDecks }); } 
-            catch (err) { showError("Interaction failed"); }
+            try { await updateDoc(doc(db, ...PATH, 'players', playerId), { decks: newDecks }); } catch (err) {}
         };
 
         const renderMana = (colors) => {
@@ -609,58 +537,19 @@
             ).join('');
         };
 
-        const formatTime = (ts) => {
-            if (!ts) return 'Now';
-            const diff = Date.now() - ts;
-            if (diff < 60000) return 'Now';
-            if (diff < 3600000) return Math.floor(diff/60000) + 'm';
-            if (diff < 86400000) return Math.floor(diff/3600000) + 'h';
-            return new Date(ts).toLocaleDateString([], {month: 'short', day: 'numeric'});
-        };
-
         const renderGrid = (queryStr = "") => {
             const grid = document.getElementById('playerGrid');
             const term = queryStr.toLowerCase().trim();
             const myLikes = getLikedDecks();
             
-            const colorMap = { 
-                'white': 'w', 'blue': 'u', 'black': 'b', 'red': 'r', 'green': 'g', 
-                'colorless': 'c', 'mono': '', 'azorius': 'wu', 'dimir': 'ub', 
-                'rakdos': 'br', 'gruul': 'rg', 'selesnya': 'wg', 'orzhov': 'wb', 
-                'izzet': 'ur', 'golgari': 'bg', 'boros': 'wr', 'simic': 'ug'
-            };
-            
-            const isColorSearch = colorMap.hasOwnProperty(term) || (/^[wubrgc]+$/i.test(term) && term.length <= 5);
+            const filteredPlayers = playersData.filter(p => {
+                if (!term) return true;
+                const match = p.name.toLowerCase().includes(term) || (p.decks || []).some(d => (d.name||'').toLowerCase().includes(term) || (d.commander||'').toLowerCase().includes(term));
+                return match;
+            });
 
-            const filteredPlayers = playersData.map(p => {
-                const decks = p.decks || [];
-                if (!term) return { ...p, filteredDecks: decks };
-
-                const nameMatch = (p.name || "").toLowerCase().includes(term) || (p.handle || "").toLowerCase().includes(term);
-                
-                const filteredDecks = decks.filter(d => {
-                    const dName = (d.name || "").toLowerCase();
-                    const dComm = (d.commander || "").toLowerCase();
-                    const dColors = (d.colors || "").toLowerCase();
-                    const textMatch = dName.includes(term) || dComm.includes(term);
-                    let colorMatch = false;
-                    if (isColorSearch) {
-                        const targetColor = colorMap[term] || term;
-                        colorMatch = targetColor.split('').every(char => dColors.includes(char));
-                    }
-                    return textMatch || colorMatch;
-                });
-
-                return { ...p, filteredDecks: nameMatch ? decks : filteredDecks };
-            }).filter(p => p.filteredDecks.length > 0);
-            
             document.getElementById('totalPlayersDisplay').innerText = playersData.length;
             document.getElementById('totalDecksDisplay').innerText = playersData.reduce((acc, p) => acc + (p.decks?.length || 0), 0);
-
-            if (filteredPlayers.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-20 text-center text-gray-500 uppercase text-xs tracking-widest">No matching legends</div>`;
-                return;
-            }
 
             grid.innerHTML = filteredPlayers.map(p => `
                 <div class="player-card">
@@ -669,37 +558,24 @@
                         <div class="flex justify-between items-start">
                             <div class="flex-grow overflow-hidden">
                                 <h3 class="mtg-font text-xl md:text-2xl text-white truncate pr-2">${p.name}</h3>
-                                <p class="text-[9px] text-orange-400 font-bold uppercase tracking-widest truncate flex items-center gap-1.5">
-                                    <i class="fab fa-discord opacity-70"></i>
-                                    @${p.handle}
-                                </p>
+                                <p class="text-[9px] text-orange-400 font-bold uppercase tracking-widest truncate">@${p.handle}</p>
                             </div>
-                            <div class="text-[8px] text-white/30 uppercase font-bold text-right shrink-0">${formatTime(p.updatedAt)}</div>
                         </div>
                         <div class="arsenal-container">
-                            ${p.filteredDecks.map((d) => {
-                                const originalIdx = p.decks.findIndex(orig => orig.name === d.name);
-                                const isLiked = myLikes.includes(`${p.id}_${originalIdx}`);
-                                const commName = (d.commander || "").replace(/'/g, "\\'");
-                                const artUrl = (d.artUrl || "").replace(/'/g, "\\'");
-                                return `
-                                <div class="deck-row" 
-                                     onmouseenter="window.showCardPreview('${commName}', '${artUrl}', event)" 
-                                     onmouseleave="window.hideCardPreview()" 
-                                     onmousemove="window.updatePreviewPosition(event)">
+                            ${(p.decks || []).map((d, idx) => `
+                                <div class="deck-row" onmouseenter="window.showCardPreview('${d.commander}', '${d.artUrl}', event)" onmouseleave="window.hideCardPreview()" onmousemove="window.updatePreviewPosition(event)">
                                     <a href="${d.url || '#'}" target="_blank" class="deck-link">${d.name}</a>
                                     <div class="flex items-center gap-2 shrink-0">
-                                        <div class="flex-shrink-0">${renderMana(d.colors)}</div>
-                                        <button onclick="window.toggleLike('${p.id}', ${originalIdx})" class="like-btn ${isLiked ? 'liked' : ''}">
-                                            <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
-                                            <span>${d.likes || 0}</span>
+                                        ${renderMana(d.colors)}
+                                        <button onclick="window.toggleLike('${p.id}', ${idx})" class="like-btn ${myLikes.includes(p.id+'_'+idx) ? 'text-red-500' : 'text-gray-500'}">
+                                            <i class="fas fa-heart text-[10px]"></i>
+                                            <span class="text-[10px]">${d.likes || 0}</span>
                                         </button>
                                     </div>
                                 </div>
-                                `;
-                            }).join('')}
+                            `).join('')}
                         </div>
-                        <button onclick="window.openEditModal('${p.id}')" class="w-full py-2 md:py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all mt-auto shrink-0">
+                        <button onclick="window.openEditModal('${p.id}')" class="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all">
                             Edit Legend
                         </button>
                     </div>
@@ -707,120 +583,60 @@
             `).join('');
         };
 
-        const cleanupRestrictedNames = async (players) => {
-            for (const p of players) {
-                if (NAMES_TO_REMOVE.includes(p.name)) {
-                    try { await deleteDoc(doc(db, ...PATH, 'players', p.id)); } catch (e) {}
-                }
-            }
-        };
-
         onAuthStateChanged(auth, async (user) => {
             if (!user) { await signInAnonymously(auth); return; }
-            currentUser = user;
             onSnapshot(collection(db, ...PATH, 'players'), (snap) => {
-                const rawPlayers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                playersData = rawPlayers.filter(p => !NAMES_TO_REMOVE.includes(p.name));
-                cleanupRestrictedNames(rawPlayers); 
-                playersData.sort((a,b) => b.updatedAt - a.updatedAt);
+                playersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 const loader = document.getElementById('loadingState');
                 if (loader) loader.remove();
                 renderGrid(document.getElementById('playerSearch').value);
-            }, (err) => showError("Connection Lost"));
+            });
 
             onSnapshot(collection(db, ...PATH, 'activity'), (snap) => {
-                const acts = snap.docs.map(d => d.data()).sort((a,b) => b.timestamp - a.timestamp).slice(0, 30);
+                const acts = snap.docs.map(d => d.data()).sort((a,b) => b.timestamp - a.timestamp).slice(0, 10);
                 const actList = document.getElementById('activityList');
-                if (actList) {
-                    actList.innerHTML = acts.map(a => {
-                        let icon = "fa-fire";
-                        let color = "text-orange-500";
-                        if (a.type === 'love') { icon = "fa-heart"; color = "text-red-500"; }
-                        if (a.type === 'join') { icon = "fa-user-plus"; color = "text-green-500"; }
-                        if (a.type === 'update') { icon = "fa-pen-fancy"; color = "text-blue-500"; }
-                        
-                        return `
-                        <div class="activity-item p-3 mb-2 flex gap-3 items-start">
-                            <i class="fas ${icon} mt-1 text-[8px] ${color}"></i>
-                            <div class="flex-grow min-w-0">
-                                <p class="text-[10px] text-white/80 leading-relaxed">
-                                    <span class="text-white font-bold">${a.actorName}</span>
-                                    ${a.type === 'love' ? `loves <span class="text-orange-400 font-bold">${a.targetPlayer}</span>'s ${a.deckName}` : a.details}
-                                </p>
-                                <p class="text-[8px] text-white/20 mt-0.5">${formatTime(a.timestamp)}</p>
-                            </div>
-                        </div>
-                    `}).join('');
-                }
+                actList.innerHTML = acts.map(a => `
+                    <div class="activity-item p-3 mb-2">
+                        <p class="text-[10px] text-white/80 leading-relaxed">
+                            <span class="text-white font-bold">${a.actorName}</span> 
+                            ${a.type === 'love' ? `loves ${a.targetPlayer}'s ${a.deckName}` : a.details}
+                        </p>
+                    </div>
+                `).join('');
             });
         });
 
         document.getElementById('editForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const saveBtn = document.getElementById('saveButton');
-            saveBtn.disabled = true;
-            saveBtn.innerText = "Transcribing...";
-            
             const id = document.getElementById('editId').value;
-            const newName = document.getElementById('editName').value.trim();
-            const newHandle = document.getElementById('editHandle').value.trim();
-            const newArt = document.getElementById('editArt').value.trim();
-            const deckRows = document.querySelectorAll('.modal-deck-input-row');
-            
-            const rawDecks = Array.from(deckRows).map(row => {
-                const name = row.querySelector('.deck-name-input').value.trim();
-                if (!name) return null;
-                return {
-                    name, url: row.querySelector('.deck-url-input').value.trim(),
-                    colors: row.querySelector('.deck-colors-input').value.trim().toUpperCase(),
-                    commander: row.querySelector('.deck-commander-input').value.trim(),
-                    artUrl: row.querySelector('.deck-art-cache').value.trim(),
+            const payload = {
+                name: document.getElementById('editName').value,
+                handle: document.getElementById('editHandle').value,
+                art: document.getElementById('editArt').value,
+                decks: Array.from(document.querySelectorAll('.modal-deck-input-row')).map(row => ({
+                    name: row.querySelector('.deck-name-input').value,
+                    commander: row.querySelector('.deck-commander-input').value,
+                    colors: row.querySelector('.deck-colors-input').value,
+                    url: row.querySelector('.deck-url-input').value,
                     likes: parseInt(row.querySelector('.deck-likes-input').value) || 0
-                };
-            }).filter(d => d !== null);
-
-            const payload = { name: newName, handle: newHandle, art: newArt, decks: rawDecks, updatedAt: Date.now() };
-            
+                })),
+                updatedAt: Date.now()
+            };
             try {
-                if (id) {
-                    const existing = playersData.find(p => p.id === id);
-                    await updateDoc(doc(db, ...PATH, 'players', id), payload);
-                    
-                    let activityDetails = "updated their legend profile";
-                    if (existing) {
-                        const oldDecks = existing.decks || [];
-                        const newDecks = rawDecks || [];
-                        if (newDecks.length > oldDecks.length) {
-                            const diff = newDecks.length - oldDecks.length;
-                            activityDetails = `added ${diff} new deck${diff > 1 ? 's' : ''} to their arsenal`;
-                        } else if (newName !== existing.name) {
-                            activityDetails = `changed their name to ${newName}`;
-                        } else {
-                            activityDetails = "refined their commander arsenal";
-                        }
-                    }
-
-                    await addDoc(collection(db, ...PATH, 'activity'), { 
-                        type: 'update', actorName: newName, details: activityDetails, timestamp: Date.now() 
-                    });
-                } else {
-                    await addDoc(collection(db, ...PATH, 'players'), payload);
-                    await addDoc(collection(db, ...PATH, 'activity'), { 
-                        type: 'join', actorName: newName, details: 'just joined the Flavortown playgroup!', timestamp: Date.now() 
-                    });
-                }
+                if (id) await updateDoc(doc(db, ...PATH, 'players', id), payload);
+                else await addDoc(collection(db, ...PATH, 'players'), payload);
                 closeModal();
-            } catch (err) { showError("Save Failed"); saveBtn.disabled = false; }
+            } catch (err) { showError("Save Failed"); }
         });
 
         document.getElementById('playerSearch').addEventListener('input', e => renderGrid(e.target.value));
-        const container = document.getElementById('flameContainer');
+        const flameContainer = document.getElementById('flameContainer');
         for (let i = 0; i < 15; i++) {
             const f = document.createElement('div');
             f.className = 'flame';
             f.style.left = `${Math.random() * 100}%`;
             f.style.animationDelay = `${Math.random() * 2}s`;
-            container.appendChild(f);
+            flameContainer.appendChild(f);
         }
     </script>
 </body>
