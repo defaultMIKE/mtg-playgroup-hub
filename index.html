@@ -232,7 +232,7 @@
         <div class="glass-panel rounded-3xl p-4 md:p-6 flex flex-col lg:flex-row gap-4 md:gap-6 items-center">
             <div class="relative flex-grow w-full">
                 <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-gray-500"></i>
-                <input type="text" id="playerSearch" placeholder="Search names, decks, commanders, or colors (e.g. WUB)..." 
+                <input type="text" id="playerSearch" placeholder="Search names, decks, commanders, or colors (e.g. 'blue', 'WUB', 'Sliver')..." 
                     class="w-full bg-black/50 border border-white/10 rounded-2xl py-3 md:py-4 pl-12 md:pl-14 pr-6 focus:outline-none focus:border-orange-500 text-white transition-all text-sm md:text-lg">
             </div>
             <div class="flex gap-6 md:gap-8 text-sm font-semibold uppercase tracking-widest min-w-fit">
@@ -322,7 +322,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, getDoc, deleteDoc, query, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -342,6 +342,8 @@
 
         let playersData = [];
         let currentUser = null;
+
+        const NAMES_TO_REMOVE = ["Alex", "Justin", "Michael", "Bobby", "Jason", "Will", "Eric", "Dee", "Jesse"];
 
         const previewEl = document.getElementById('cardPreview');
         const previewImg = document.getElementById('previewImg');
@@ -540,8 +542,13 @@
             } else {
                 deck.likes = (deck.likes || 0) + 1;
                 myLikes.push(deckId);
+                // Set attribution to "A Guest" since we don't have a specific logged-in user name
                 await addDoc(collection(db, ...PATH, 'activity'), { 
-                    type: 'love', targetPlayer: player.name, deckName: deck.name, timestamp: Date.now() 
+                    type: 'love', 
+                    actorName: 'A Guest',
+                    targetPlayer: player.name, 
+                    deckName: deck.name, 
+                    timestamp: Date.now() 
                 });
             }
             saveLikedDecks(myLikes);
@@ -569,21 +576,46 @@
             const grid = document.getElementById('playerGrid');
             const term = queryStr.toLowerCase().trim();
             const myLikes = getLikedDecks();
-            const colorMap = { 'white': 'W', 'blue': 'U', 'black': 'B', 'red': 'R', 'green': 'G', 'colorless': 'C' };
-            const mappedTerm = colorMap[term] || term;
+            
+            // Map common color terms to WUBRG
+            const colorMap = { 
+                'white': 'w', 'blue': 'u', 'black': 'b', 'red': 'r', 'green': 'g', 
+                'colorless': 'c', 'mono': '', 'azorius': 'wu', 'dimir': 'ub', 
+                'rakdos': 'br', 'gruul': 'rg', 'selesnya': 'wg', 'orzhov': 'wb', 
+                'izzet': 'ur', 'golgari': 'bg', 'boros': 'wr', 'simic': 'ug'
+            };
+            
+            const isColorSearch = colorMap.hasOwnProperty(term) || (/^[wubrgc]+$/i.test(term) && term.length <= 5);
 
             const filteredPlayers = playersData.map(p => {
                 const decks = p.decks || [];
                 if (!term) return { ...p, filteredDecks: decks };
+
+                const nameMatch = (p.name || "").toLowerCase().includes(term) || (p.handle || "").toLowerCase().includes(term);
+                
+                // Filtering decks based on the search term
                 const filteredDecks = decks.filter(d => {
                     const dName = (d.name || "").toLowerCase();
                     const dComm = (d.commander || "").toLowerCase();
                     const dColors = (d.colors || "").toLowerCase();
-                    const matchesText = dName.includes(term) || dComm.includes(term);
-                    const matchesColors = dColors.includes(mappedTerm);
-                    return matchesText || matchesColors;
+                    
+                    // Match by text (name, commander)
+                    const textMatch = dName.includes(term) || dComm.includes(term);
+                    
+                    // Match by color (handle keywords or WUBRG strings)
+                    let colorMatch = false;
+                    if (isColorSearch) {
+                        const targetColor = colorMap[term] || term;
+                        // For specific letters like "w", we want to see if the deck HAS that color
+                        // For specific guild names like "izzet", we want to see if it HAS those colors
+                        colorMatch = targetColor.split('').every(char => dColors.includes(char));
+                    }
+
+                    return textMatch || colorMatch;
                 });
-                const nameMatch = (p.name || "").toLowerCase().includes(term) || (p.handle || "").toLowerCase().includes(term);
+
+                // If the player name matches, we show ALL their decks. 
+                // If not, we only show the decks that match the search criteria.
                 return { ...p, filteredDecks: nameMatch ? decks : filteredDecks };
             }).filter(p => p.filteredDecks.length > 0);
             
@@ -633,18 +665,30 @@
                             }).join('')}
                         </div>
                         <button onclick="window.openEditModal('${p.id}')" class="w-full py-2 md:py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all mt-auto shrink-0">
-                            Edit Profile
+                            Edit Legend
                         </button>
                     </div>
                 </div>
             `).join('');
         };
 
+        const cleanupRestrictedNames = async (players) => {
+            for (const p of players) {
+                if (NAMES_TO_REMOVE.includes(p.name)) {
+                    try {
+                        await deleteDoc(doc(db, ...PATH, 'players', p.id));
+                    } catch (e) { console.error("Cleanup error", e); }
+                }
+            }
+        };
+
         onAuthStateChanged(auth, async (user) => {
             if (!user) { await signInAnonymously(auth); return; }
             currentUser = user;
             onSnapshot(collection(db, ...PATH, 'players'), (snap) => {
-                playersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const rawPlayers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                playersData = rawPlayers.filter(p => !NAMES_TO_REMOVE.includes(p.name));
+                cleanupRestrictedNames(rawPlayers); 
                 playersData.sort((a,b) => b.updatedAt - a.updatedAt);
                 const loader = document.getElementById('loadingState');
                 if (loader) loader.remove();
@@ -660,8 +704,8 @@
                             <i class="fas fa-fire mt-1 text-[8px] text-orange-500"></i>
                             <div class="flex-grow min-w-0">
                                 <p class="text-[10px] text-white/80">
-                                    <span class="text-white font-bold">${a.playerName || a.targetPlayer || "Someone"}</span>
-                                    ${a.type === 'love' ? 'loves ' + (a.deckName || 'a deck') : (a.details || 'updated their scroll')}
+                                    <span class="text-white font-bold">${a.actorName || a.playerName || "Someone"}</span>
+                                    ${a.type === 'love' ? `loves <span class="text-orange-400 font-bold">${a.targetPlayer}</span>'s ${a.deckName || 'deck'}` : (a.details || 'updated their scroll')}
                                 </p>
                             </div>
                         </div>
@@ -698,6 +742,10 @@
                     await updateDoc(doc(db, ...PATH, 'players', id), payload);
                 } else {
                     await addDoc(collection(db, ...PATH, 'players'), payload);
+                    // Add creation activity
+                    await addDoc(collection(db, ...PATH, 'activity'), { 
+                        type: 'update', actorName: newName, details: 'joined the playgroup!', timestamp: Date.now() 
+                    });
                 }
                 closeModal();
             } catch (err) { showError("Save Failed"); saveBtn.disabled = false; }
