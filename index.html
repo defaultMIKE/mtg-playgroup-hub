@@ -185,6 +185,9 @@
         .remove-deck-btn { position: absolute; top: 12px; right: 12px; color: #666; transition: color 0.2s; }
         .remove-deck-btn:hover { color: #ef4444; }
 
+        .reorder-btn { color: #555; transition: all 0.2s; padding: 4px; border-radius: 4px; }
+        .reorder-btn:hover { color: var(--mtg-gold); background: rgba(255,255,255,0.05); }
+
         .autocomplete-container { position: relative; }
         .autocomplete-list {
             position: absolute; top: 100%; left: 0; right: 0;
@@ -229,7 +232,7 @@
         <div class="glass-panel rounded-3xl p-4 md:p-6 flex flex-col lg:flex-row gap-4 md:gap-6 items-center">
             <div class="relative flex-grow w-full">
                 <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-gray-500"></i>
-                <input type="text" id="playerSearch" placeholder="Search names, decks, or commanders..." 
+                <input type="text" id="playerSearch" placeholder="Search names, decks, commanders, or colors (e.g. WUB)..." 
                     class="w-full bg-black/50 border border-white/10 rounded-2xl py-3 md:py-4 pl-12 md:pl-14 pr-6 focus:outline-none focus:border-orange-500 text-white transition-all text-sm md:text-lg">
             </div>
             <div class="flex gap-6 md:gap-8 text-sm font-semibold uppercase tracking-widest min-w-fit">
@@ -344,7 +347,18 @@
         const previewImg = document.getElementById('previewImg');
         const cardCache = new Map();
 
-        // Advanced search: search all prints to allow alternate arts
+        window.moveDeck = (btn, direction) => {
+            const row = btn.closest('.modal-deck-input-row');
+            const container = document.getElementById('deckInputsContainer');
+            if (direction === 'up') {
+                const prev = row.previousElementSibling;
+                if (prev) container.insertBefore(row, prev);
+            } else {
+                const next = row.nextElementSibling;
+                if (next) container.insertBefore(next, row);
+            }
+        };
+
         window.handleCommanderSearch = async (input) => {
             const query = input.value.trim();
             const listEl = input.nextElementSibling;
@@ -354,14 +368,12 @@
             }
 
             try {
-                // Fetching prints specifically to allow picking alternate arts
                 const resp = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}+is:commander+unique:prints`);
                 const data = await resp.json();
                 
                 if (data.data && data.data.length > 0) {
                     listEl.innerHTML = data.data.slice(0, 15).map(card => {
                         const nameStr = card.name.replace(/'/g, "\\'");
-                        const setStr = card.set_name.replace(/'/g, "\\'");
                         const artUrl = card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || "";
                         const cropUrl = card.image_uris?.art_crop || card.card_faces?.[0]?.image_uris?.art_crop || "";
                         
@@ -373,7 +385,6 @@
                     }).join('');
                     listEl.style.display = 'block';
                 } else {
-                    // Fallback to simple autocomplete if exact commander search yields nothing
                     const autoResp = await fetch(`https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(query)}`);
                     const autoData = await autoResp.json();
                     listEl.innerHTML = autoData.data.map(name => `<div class="autocomplete-item" onclick="window.selectCommander(this, '${name.replace(/'/g, "\\'")}', '', '')">${name}</div>`).join('');
@@ -389,39 +400,29 @@
             
             input.value = name;
             if (previewUrl) {
-                previewInput.value = previewUrl; // Store the specific print URL
+                previewInput.value = previewUrl;
                 cardCache.set(name, previewUrl);
             }
-            
-            // Helpful: auto-fill the profile art crop if it's currently empty
             const profileArtInput = document.getElementById('editArt');
             if (!profileArtInput.value && cropUrl) {
                 profileArtInput.value = cropUrl;
             }
-
             item.parentElement.style.display = 'none';
         };
 
         window.showCardPreview = async (commanderName, specificArtUrl, event) => {
             if (!commanderName) return;
-            
             previewEl.style.display = 'block';
             updatePreviewPosition(event);
-
-            // Priority 1: Use the specific art stored with the deck
             if (specificArtUrl) {
                 previewImg.src = specificArtUrl;
                 return;
             }
-
-            // Priority 2: Use cache
             if (cardCache.has(commanderName)) {
                 previewImg.src = cardCache.get(commanderName);
                 return;
             }
-
             previewImg.src = "https://cards.scryfall.io/large/front/0/e/0e53a20d-7049-41e7-8848-f68695d6f140.jpg"; 
-
             try {
                 const resp = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(commanderName)}`);
                 const data = await resp.json();
@@ -467,10 +468,14 @@
             row.id = rowId;
             row.className = 'modal-deck-input-row';
             row.innerHTML = `
-                <button type="button" onclick="document.getElementById('${rowId}').remove()" class="remove-deck-btn">
-                    <i class="fas fa-times"></i>
-                </button>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                <div class="absolute top-2 right-2 flex items-center gap-1">
+                    <button type="button" onclick="window.moveDeck(this, 'up')" class="reorder-btn" title="Move Up"><i class="fas fa-arrow-up text-[10px]"></i></button>
+                    <button type="button" onclick="window.moveDeck(this, 'down')" class="reorder-btn" title="Move Down"><i class="fas fa-arrow-down text-[10px]"></i></button>
+                    <button type="button" onclick="document.getElementById('${rowId}').remove()" class="remove-deck-btn relative !top-0 !right-0 ml-2">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 pr-20">
                     <div>
                         <input type="text" class="deck-name-input w-full bg-black/40 border border-white/5 p-3 rounded-lg text-white text-xs focus:border-orange-500 outline-none" 
                                placeholder="Deck Name (e.g. Eldrazi Unbound)" value="${deckData.name || ''}" required>
@@ -564,13 +569,21 @@
             const grid = document.getElementById('playerGrid');
             const term = queryStr.toLowerCase().trim();
             const myLikes = getLikedDecks();
+            const colorMap = { 'white': 'W', 'blue': 'U', 'black': 'B', 'red': 'R', 'green': 'G', 'colorless': 'C' };
+            const mappedTerm = colorMap[term] || term;
+
             const filteredPlayers = playersData.map(p => {
                 const decks = p.decks || [];
                 if (!term) return { ...p, filteredDecks: decks };
-                const filteredDecks = decks.filter(d => 
-                    d.name.toLowerCase().includes(term) || (d.commander || "").toLowerCase().includes(term) || (d.colors || "").toLowerCase().includes(term)
-                );
-                const nameMatch = p.name?.toLowerCase().includes(term) || p.handle?.toLowerCase().includes(term);
+                const filteredDecks = decks.filter(d => {
+                    const dName = (d.name || "").toLowerCase();
+                    const dComm = (d.commander || "").toLowerCase();
+                    const dColors = (d.colors || "").toLowerCase();
+                    const matchesText = dName.includes(term) || dComm.includes(term);
+                    const matchesColors = dColors.includes(mappedTerm);
+                    return matchesText || matchesColors;
+                });
+                const nameMatch = (p.name || "").toLowerCase().includes(term) || (p.handle || "").toLowerCase().includes(term);
                 return { ...p, filteredDecks: nameMatch ? decks : filteredDecks };
             }).filter(p => p.filteredDecks.length > 0);
             
@@ -589,7 +602,10 @@
                         <div class="flex justify-between items-start">
                             <div class="flex-grow overflow-hidden">
                                 <h3 class="mtg-font text-xl md:text-2xl text-white truncate pr-2">${p.name}</h3>
-                                <p class="text-[9px] text-orange-400 font-bold uppercase tracking-widest truncate">@${p.handle}</p>
+                                <p class="text-[9px] text-orange-400 font-bold uppercase tracking-widest truncate flex items-center gap-1.5">
+                                    <i class="fab fa-discord opacity-70"></i>
+                                    @${p.handle}
+                                </p>
                             </div>
                             <div class="text-[8px] text-white/30 uppercase font-bold text-right shrink-0">${formatTime(p.updatedAt)}</div>
                         </div>
