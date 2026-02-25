@@ -167,44 +167,37 @@
         
         #errorDisplay { display: none; position: fixed; top: 20px; right: 20px; z-index: 1000; background: rgba(127, 29, 29, 0.95); color: white; padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid #ef4444; max-width: 320px; }
 
-        /* Sidebar Search Specific Styles */
-        .sidebar-search-container { position: relative; }
-        .sidebar-results {
+        /* Sidebar & Modal Search Specific Styles */
+        .search-results-dropdown {
             position: absolute; top: 100%; left: 0; right: 0;
             background: #1a1a1a; border: 1px solid var(--mtg-gold);
             border-top: none; border-radius: 0 0 16px 16px;
-            z-index: 50; max-height: 300px; overflow-y: auto;
+            z-index: 150; max-height: 250px; overflow-y: auto;
             box-shadow: 0 10px 25px rgba(0,0,0,0.6);
             display: none;
         }
         .sidebar-result-item {
-            padding: 12px 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 12px; cursor: pointer; display: flex; align-items: center; gap: 12px;
             border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;
         }
         .sidebar-result-item:hover { background: rgba(197, 164, 103, 0.15); }
+        .sidebar-result-item .thumb { width: 36px; height: 50px; border-radius: 4px; object-fit: cover; background: #333; }
         .sidebar-result-item .name { font-size: 0.75rem; font-weight: 600; color: #eee; }
         .sidebar-result-item .set { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: var(--mtg-gold); }
 
         .delete-trigger { color: #666; transition: all 0.2s; font-size: 10px; cursor: pointer; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
         .delete-trigger:hover { color: #ef4444; }
-        .delete-trigger.confirm { color: #ef4444; animation: pulseRed 1.5s infinite; }
         
-        @keyframes pulseRed { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
         .modal-deck-input-row { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 16px; margin-bottom: 12px; position: relative; }
-        .reorder-btn { color: #555; transition: all 0.2s; padding: 4px; border-radius: 4px; }
-        .reorder-btn:hover { color: var(--mtg-gold); background: rgba(255,255,255,0.05); }
+        
+        .scryfall-button { background: #2b2b2b; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1); }
+        .scryfall-button:hover { background: #444; border-color: var(--mtg-gold); }
 
-        .autocomplete-list {
-            position: absolute; top: 100%; left: 0; right: 0;
-            background: #1a1a1a; border: 1px solid var(--mtg-gold);
-            z-index: 1001; max-height: 250px; overflow-y: auto; display: none;
-        }
-        .autocomplete-item {
-            padding: 10px 15px; cursor: pointer; color: #ccc; font-size: 0.7rem; 
-            border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;
-        }
-        .autocomplete-item:hover { background: rgba(197, 164, 103, 0.15); color: white; }
+        /* Reorder Controls */
+        .reorder-btns { display: flex; flex-direction: column; gap: 4px; justify-content: center; }
+        .reorder-btn { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 4px; font-size: 10px; color: #666; transition: all 0.2s; }
+        .reorder-btn:hover:not(:disabled) { background: rgba(197, 164, 103, 0.2); color: var(--mtg-gold); }
+        .reorder-btn:disabled { opacity: 0.2; cursor: not-allowed; }
     </style>
 </head>
 <body class="pb-20">
@@ -260,17 +253,16 @@
         </div>
 
         <aside class="xl:col-span-1 space-y-6">
-            <!-- New Scryfall Card Search -->
-            <div class="glass-panel rounded-2xl p-5 sidebar-search-container">
+            <div class="glass-panel rounded-2xl p-5 relative">
                 <h3 class="mtg-font text-[10px] text-gold uppercase tracking-[0.2em] mb-3" style="color: var(--mtg-gold)">Scryfall Oracle</h3>
                 <div class="relative">
                     <i class="fas fa-bolt absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 text-xs"></i>
                     <input type="text" id="sidebarCardSearch" placeholder="Search any MTG card..." 
                         class="w-full bg-black/40 border border-white/5 rounded-xl py-3 pl-10 pr-4 text-xs text-white focus:outline-none focus:border-gold transition-all"
-                        oninput="window.handleSidebarSearch(this)"
+                        oninput="window.handleCardSearch(this, 'sidebarResults')"
                         onblur="setTimeout(() => document.getElementById('sidebarResults').style.display = 'none', 300)">
                 </div>
-                <div id="sidebarResults" class="sidebar-results"></div>
+                <div id="sidebarResults" class="search-results-dropdown"></div>
             </div>
 
             <button onclick="window.addNewPlayer()" class="w-full bg-orange-600 hover:bg-orange-500 text-white p-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20">
@@ -337,7 +329,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, getDoc, deleteDoc, query, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -356,35 +348,42 @@
         const PATH = ['artifacts', appId, 'public', 'data'];
 
         let playersData = [];
-        let deleteConfirmed = false;
         const previewEl = document.getElementById('cardPreview');
         const previewImg = document.getElementById('previewImg');
         const cardCache = new Map();
 
-        // SCRYFALL SIDEBAR SEARCH
-        window.handleSidebarSearch = async (input) => {
+        // UNIVERSAL CARD SEARCH HANDLER
+        window.handleCardSearch = async (input, resultsId, onSelect = null) => {
             const query = input.value.trim();
-            const resultsEl = document.getElementById('sidebarResults');
+            const resultsEl = document.getElementById(resultsId);
             if (query.length < 3) {
                 resultsEl.style.display = 'none';
                 return;
             }
 
             try {
-                const resp = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}`);
+                // Use unique:prints to show all printings as requested
+                const resp = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}+unique%3Aprints`);
                 const data = await resp.json();
                 
                 if (data.data && data.data.length > 0) {
-                    resultsEl.innerHTML = data.data.slice(0, 10).map(card => {
+                    resultsEl.innerHTML = data.data.slice(0, 15).map(card => {
                         const nameStr = card.name.replace(/'/g, "\\'");
-                        const artUrl = card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || "";
+                        const normalArt = card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || "";
+                        const smallArt = card.image_uris?.small || card.card_faces?.[0]?.image_uris?.small || "";
+                        const colors = (card.colors || card.card_faces?.[0]?.colors || []).join('');
+                        
                         return `
                         <div class="sidebar-result-item" 
-                             onmouseenter="window.showCardPreview('${nameStr}', '${artUrl}', event)" 
+                             onmouseenter="window.showCardPreview('${nameStr}', '${normalArt}', event)" 
                              onmouseleave="window.hideCardPreview()"
-                             onmousemove="window.updatePreviewPosition(event)">
-                            <span class="name truncate">${card.name}</span>
-                            <span class="set">${card.set.toUpperCase()}</span>
+                             onmousemove="window.updatePreviewPosition(event)"
+                             onclick="window.selectCardSearchResult('${resultsId}', '${nameStr}', '${normalArt}', '${colors}', ${onSelect ? `'${onSelect}'` : 'null'})">
+                            <img src="${smallArt}" class="thumb" alt="">
+                            <div class="flex flex-col min-w-0 flex-1">
+                                <span class="name truncate">${card.name}</span>
+                                <span class="set">${card.set_name} (${card.set.toUpperCase()})</span>
+                            </div>
                         </div>`;
                     }).join('');
                     resultsEl.style.display = 'block';
@@ -392,31 +391,61 @@
             } catch (err) { console.error("Search failed", err); }
         };
 
+        window.selectCardSearchResult = (resultsId, name, artUrl, colors, rowId) => {
+            const resultsEl = document.getElementById(resultsId);
+            resultsEl.style.display = 'none';
+
+            if (rowId) {
+                const row = document.getElementById(rowId);
+                if (row) {
+                    row.querySelector('.deck-commander-input').value = name;
+                    row.querySelector('.deck-colors-input').value = colors;
+                    row.querySelector('.deck-art-cache').value = artUrl;
+                }
+            }
+        };
+
         // SHARED PREVIEW LOGIC
         window.showCardPreview = async (name, url, event) => {
-            if (!name) return;
+            if (!name || name === 'null' || name === 'undefined') return;
+            
             previewEl.style.display = 'block';
             updatePreviewPosition(event);
-            if (url) {
+
+            if (url && url !== '') {
                 previewImg.src = url;
                 return;
             }
+
             if (cardCache.has(name)) {
                 previewImg.src = cardCache.get(name);
                 return;
             }
+
             try {
                 const resp = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`);
                 const data = await resp.json();
+                
+                if (data.status === 404) {
+                    window.hideCardPreview();
+                    return;
+                }
+
                 const imgSrc = data.image_uris?.normal || data.card_faces?.[0]?.image_uris?.normal;
                 if (imgSrc) {
                     cardCache.set(name, imgSrc);
                     previewImg.src = imgSrc;
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error("Preview fetch failed", e);
+            }
         };
 
-        window.hideCardPreview = () => { previewEl.style.display = 'none'; };
+        window.hideCardPreview = () => { 
+            previewEl.style.display = 'none'; 
+            previewImg.src = '';
+        };
+
         window.updatePreviewPosition = (e) => {
             const x = e.clientX + 20;
             let y = e.clientY - 140;
@@ -438,49 +467,78 @@
 
         window.closeModal = () => {
             document.getElementById('editModal').style.display = 'none';
-            deleteConfirmed = false;
         };
 
         window.confirmDelete = async () => {
             const id = document.getElementById('editId').value;
-            if (!id) return;
-            const delBtn = document.getElementById('deleteBtn');
-            if (!deleteConfirmed) {
-                deleteConfirmed = true;
-                delBtn.innerText = "Confirm Deletion?";
-                delBtn.classList.add('confirm');
-                return;
+            if (confirm("Are you sure you want to vanish from the scroll?")) {
+                try {
+                    await deleteDoc(doc(db, ...PATH, 'players', id));
+                    closeModal();
+                } catch (err) { showError("The scroll refused to be burned."); }
             }
-            try {
-                await deleteDoc(doc(db, ...PATH, 'players', id));
-                closeModal();
-            } catch (err) { showError("The scroll refused to be burned."); }
+        };
+
+        // REORDER LOGIC
+        window.moveDeck = (rowId, direction) => {
+            const container = document.getElementById('deckInputsContainer');
+            const rows = Array.from(container.children);
+            const index = rows.findIndex(r => r.id === rowId);
+            
+            if (direction === 'up' && index > 0) {
+                container.insertBefore(rows[index], rows[index - 1]);
+            } else if (direction === 'down' && index < rows.length - 1) {
+                container.insertBefore(rows[index + 1], rows[index]);
+            }
         };
 
         window.addDeckRow = (deckData = {}) => {
             const container = document.getElementById('deckInputsContainer');
-            const rowId = 'row_' + Date.now() + Math.random();
+            const rowId = 'row_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+            const resultsId = 'results_' + rowId;
             const row = document.createElement('div');
             row.id = rowId;
-            row.className = 'modal-deck-input-row';
+            row.className = 'modal-deck-input-row flex gap-4';
             row.innerHTML = `
-                <div class="absolute top-2 right-2 flex items-center gap-1">
-                    <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-gray-600 hover:text-red-500 transition-colors">
-                        <i class="fas fa-times text-xs"></i>
-                    </button>
+                <div class="reorder-btns shrink-0">
+                    <button type="button" onclick="window.moveDeck('${rowId}', 'up')" class="reorder-btn" title="Move Up"><i class="fas fa-chevron-up"></i></button>
+                    <button type="button" onclick="window.moveDeck('${rowId}', 'down')" class="reorder-btn" title="Move Down"><i class="fas fa-chevron-down"></i></button>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 pr-8">
-                    <input type="text" class="deck-name-input bg-black/40 border border-white/5 p-3 rounded-lg text-white text-xs" placeholder="Deck Name" value="${deckData.name || ''}" required>
-                    <input type="text" class="deck-commander-input bg-black/40 border border-white/5 p-3 rounded-lg text-white text-xs" placeholder="Commander" value="${deckData.commander || ''}">
+                <div class="flex-grow">
+                    <div class="absolute top-2 right-2">
+                        <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-gray-600 hover:text-red-500 p-2"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 pr-8">
+                        <input type="text" class="deck-name-input bg-black/40 border border-white/5 p-3 rounded-lg text-white text-xs" placeholder="Deck Name" value="${deckData.name || ''}" required>
+                        <div class="relative">
+                            <input type="text" class="deck-commander-input bg-black/40 border border-white/5 p-3 rounded-lg text-white text-xs w-full" 
+                                placeholder="Commander (Type to search...)" value="${deckData.commander || ''}"
+                                oninput="window.handleCardSearch(this, '${resultsId}', '${rowId}')"
+                                onblur="setTimeout(() => { if(document.getElementById('${resultsId}')) document.getElementById('${resultsId}').style.display = 'none' }, 300)">
+                            <div id="${resultsId}" class="search-results-dropdown"></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <input type="text" maxlength="5" class="deck-colors-input w-24 bg-black/40 border border-white/5 p-3 rounded-lg text-white text-xs uppercase" placeholder="WUBRG" value="${deckData.colors || ''}">
+                        <input type="url" class="deck-url-input flex-grow bg-black/40 border border-white/5 p-3 rounded-lg text-white text-[10px]" placeholder="Decklist URL" value="${deckData.url || ''}">
+                        <button type="button" onclick="window.useArtAsProfile('${rowId}')" class="scryfall-button shrink-0" title="Use this commander art for profile">Use Art</button>
+                    </div>
+                    <input type="hidden" class="deck-likes-input" value="${deckData.likes || 0}">
+                    <input type="hidden" class="deck-art-cache" value="${deckData.artUrl || ''}">
                 </div>
-                <div class="flex gap-3">
-                    <input type="text" maxlength="5" class="deck-colors-input w-24 bg-black/40 border border-white/5 p-3 rounded-lg text-white text-xs font-mono uppercase" placeholder="WUBRG" value="${deckData.colors || ''}">
-                    <input type="url" class="deck-url-input flex-grow bg-black/40 border border-white/5 p-3 rounded-lg text-white text-[10px]" placeholder="Decklist URL" value="${deckData.url || ''}">
-                </div>
-                <input type="hidden" class="deck-likes-input" value="${deckData.likes || 0}">
-                <input type="hidden" class="deck-art-cache" value="${deckData.artUrl || ''}">
             `;
             container.appendChild(row);
+        };
+
+        window.useArtAsProfile = (rowId) => {
+            const row = document.getElementById(rowId);
+            const artUrl = row.querySelector('.deck-art-cache').value;
+            if (artUrl) {
+                const cropUrl = artUrl.replace('/normal/', '/art_crop/');
+                document.getElementById('editArt').value = cropUrl;
+            } else {
+                showError("Search for a commander first to get its art!");
+            }
         };
         
         window.addNewPlayer = () => {
@@ -505,7 +563,11 @@
             document.getElementById('deleteContainer').classList.remove('hidden');
             const container = document.getElementById('deckInputsContainer');
             container.innerHTML = "";
-            (p.decks || []).forEach(d => addDeckRow(d));
+            if (p.decks && p.decks.length > 0) {
+                p.decks.forEach(d => addDeckRow(d));
+            } else {
+                addDeckRow();
+            }
             document.getElementById('modalTitle').textContent = `Update ${p.name}`;
             document.getElementById('editModal').style.display = 'flex';
         };
@@ -524,10 +586,21 @@
             } else {
                 deck.likes = (deck.likes || 0) + 1;
                 myLikes.push(deckId);
-                await addDoc(collection(db, ...PATH, 'activity'), { type: 'love', actorName: 'A Guest', targetPlayer: player.name, deckName: deck.name, timestamp: Date.now() });
+                await addDoc(collection(db, ...PATH, 'activity'), { 
+                    type: 'love', 
+                    actorName: 'A Planeswalker', 
+                    targetPlayer: player.name, 
+                    deckName: deck.name, 
+                    timestamp: Date.now() 
+                });
             }
             saveLikedDecks(myLikes);
-            try { await updateDoc(doc(db, ...PATH, 'players', playerId), { decks: newDecks }); } catch (err) {}
+            try { 
+                await updateDoc(doc(db, ...PATH, 'players', playerId), { 
+                    decks: newDecks,
+                    updatedAt: Date.now()
+                }); 
+            } catch (err) {}
         };
 
         const renderMana = (colors) => {
@@ -542,10 +615,16 @@
             const term = queryStr.toLowerCase().trim();
             const myLikes = getLikedDecks();
             
-            const filteredPlayers = playersData.filter(p => {
+            const sortedPlayers = [...playersData].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+            const filteredPlayers = sortedPlayers.filter(p => {
                 if (!term) return true;
-                const match = p.name.toLowerCase().includes(term) || (p.decks || []).some(d => (d.name||'').toLowerCase().includes(term) || (d.commander||'').toLowerCase().includes(term));
-                return match;
+                const matchName = p.name.toLowerCase().includes(term);
+                const matchDecks = (p.decks || []).some(d => 
+                    (d.name||'').toLowerCase().includes(term) || 
+                    (d.commander||'').toLowerCase().includes(term)
+                );
+                return matchName || matchDecks;
             });
 
             document.getElementById('totalPlayersDisplay').innerText = playersData.length;
@@ -563,7 +642,10 @@
                         </div>
                         <div class="arsenal-container">
                             ${(p.decks || []).map((d, idx) => `
-                                <div class="deck-row" onmouseenter="window.showCardPreview('${d.commander}', '${d.artUrl}', event)" onmouseleave="window.hideCardPreview()" onmousemove="window.updatePreviewPosition(event)">
+                                <div class="deck-row" 
+                                     onmouseenter="window.showCardPreview('${(d.commander || '').replace(/'/g, "\\'")}', '${d.artUrl || ''}', event)" 
+                                     onmouseleave="window.hideCardPreview()" 
+                                     onmousemove="window.updatePreviewPosition(event)">
                                     <a href="${d.url || '#'}" target="_blank" class="deck-link">${d.name}</a>
                                     <div class="flex items-center gap-2 shrink-0">
                                         ${renderMana(d.colors)}
@@ -575,7 +657,7 @@
                                 </div>
                             `).join('')}
                         </div>
-                        <button onclick="window.openEditModal('${p.id}')" class="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all">
+                        <button onclick="window.openEditModal('${p.id}')" class="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all mt-auto">
                             Edit Legend
                         </button>
                     </div>
@@ -618,7 +700,8 @@
                     commander: row.querySelector('.deck-commander-input').value,
                     colors: row.querySelector('.deck-colors-input').value,
                     url: row.querySelector('.deck-url-input').value,
-                    likes: parseInt(row.querySelector('.deck-likes-input').value) || 0
+                    likes: parseInt(row.querySelector('.deck-likes-input').value) || 0,
+                    artUrl: row.querySelector('.deck-art-cache').value
                 })),
                 updatedAt: Date.now()
             };
